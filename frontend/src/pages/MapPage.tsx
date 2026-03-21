@@ -6,6 +6,7 @@ import { useGeolocation } from '../hooks/useGeolocation'
 import { haversine } from '../hooks/useDistance'
 import MapView from '../components/MapView'
 import FilterBar from '../components/FilterBar'
+import FuelSelector from '../components/FuelSelector'
 import StatsBar from '../components/StatsBar'
 import BottomSheet from '../components/BottomSheet'
 
@@ -94,16 +95,29 @@ export default function MapPage() {
 
   const summary = data?.summary ?? { total: 0, with_fuel: 0, all_empty: 0, diesel_crisis: false, diesel_count: 0 }
 
+  const sourceTime = data?.updated_at
+    ? new Date(data.updated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    : null
+
   return (
     <div className="h-screen flex flex-col">
+      {/* App header */}
+      <div className="bg-white/95 backdrop-blur-sm flex items-center justify-between px-3 pt-[env(safe-area-inset-top)] border-b border-gray-50">
+        <div className="flex items-center gap-1.5 py-1">
+          <span className="text-sm font-bold text-gray-800">LPN Fuel</span>
+          <span className="text-[10px] text-gray-400">ลำพูน</span>
+        </div>
+        <div className="text-[10px] text-gray-400">
+          ข้อมูลจาก FuelRadar {sourceTime && <span>· {sourceTime}</span>}
+        </div>
+      </div>
+
       {/* Filter */}
       <FilterBar
         status={statusFilter}
         brand={brandFilter}
-        fuel={fuelFilter}
         onStatus={setStatusFilter}
         onBrand={setBrandFilter}
-        onFuel={setFuelFilter}
         stationCount={filteredStations.length}
       />
 
@@ -117,11 +131,14 @@ export default function MapPage() {
           userLng={geo.lng}
         />
 
+        {/* Fuel type selector - top left */}
+        <FuelSelector selected={fuelFilter} onSelect={setFuelFilter} />
+
         {/* Floating stats overlay */}
         <StatsBar summary={summary} lastUpdated={lastUpdated} />
 
         {/* Right-side floating buttons */}
-        <div className="absolute bottom-4 right-3 z-[500] flex flex-col gap-2">
+        <div className="absolute bottom-14 right-3 z-[500] flex flex-col gap-2">
           {/* Locate me */}
           <button
             onClick={geo.request}

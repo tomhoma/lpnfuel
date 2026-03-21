@@ -11,7 +11,7 @@ export default function StatsBar({ summary, lastUpdated }: StatsBarProps) {
     : 0
 
   return (
-    <div className="absolute bottom-4 left-3 z-[500] bg-white/90 backdrop-blur-sm shadow-lg rounded-xl px-3 py-2 border border-gray-200/50">
+    <div className="absolute bottom-14 left-3 z-[500] bg-white/90 backdrop-blur-sm shadow-lg rounded-xl px-3 py-2 border border-gray-200/50">
       <div className="flex items-center gap-2 text-xs">
         <span className="font-bold text-green-600 text-sm">{summary.with_fuel}</span>
         <span className="text-gray-500">/{summary.total} มีน้ำมัน ({pct}%)</span>

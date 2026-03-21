@@ -22,6 +22,10 @@ body {
   font-size: 10px;
 }
 
+.leaflet-interactive:focus {
+  outline: none !important;
+}
+
 /* Tooltip styles */
 .station-tooltip {
   font-family: 'Sarabun', sans-serif !important;
