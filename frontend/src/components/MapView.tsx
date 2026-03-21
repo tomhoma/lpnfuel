@@ -53,13 +53,18 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
   }
 }
 
-function fuelSummary(s: StationWithStatus): string {
-  const items: string[] = []
-  if (s.diesel === 'มี') items.push('ดีเซล')
-  if (s.gas91 === 'มี') items.push('91')
-  if (s.gas95 === 'มี') items.push('95')
-  if (s.e20 === 'มี') items.push('E20')
-  return items.length > 0 ? items.join(' ') : 'หมด'
+interface FuelItem {
+  label: string
+  available: boolean
+}
+
+function getFuelItems(s: StationWithStatus): FuelItem[] {
+  return [
+    { label: 'ดีเซล', available: s.diesel === 'มี' },
+    { label: '91', available: s.gas91 === 'มี' },
+    { label: '95', available: s.gas95 === 'มี' },
+    { label: 'E20', available: s.e20 === 'มี' },
+  ]
 }
 
 function UserLocationMarker({ lat, lng }: { lat: number; lng: number }) {
@@ -191,9 +196,26 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
             }}
           >
             <Tooltip direction="top" offset={[0, -8]} className="station-tooltip">
-              <span className="font-semibold">{s.brand}</span> {s.name}
-              <br />
-              <span className="text-xs">{fuelSummary(s)}</span>
+              <div style={{ fontWeight: 600 }}>{s.brand} {s.name}</div>
+              <div style={{ display: 'flex', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
+                {getFuelItems(s).map(f => (
+                  <span
+                    key={f.label}
+                    style={{
+                      display: 'inline-block',
+                      padding: '1px 6px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: 500,
+                      backgroundColor: f.available ? '#DCFCE7' : '#FEE2E2',
+                      color: f.available ? '#166534' : '#991B1B',
+                      border: `1px solid ${f.available ? '#BBF7D0' : '#FECACA'}`,
+                    }}
+                  >
+                    {f.label}
+                  </span>
+                ))}
+              </div>
             </Tooltip>
           </CircleMarker>
         )

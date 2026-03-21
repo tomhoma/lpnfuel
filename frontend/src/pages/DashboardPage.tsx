@@ -1,11 +1,11 @@
 import { useDashboard, usePrices } from '../hooks/useStations'
 import TrendChart from '../components/TrendChart'
-import PriceCard from '../components/PriceCard'
+import FeedbackCard from '../components/FeedbackCard'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
   const { data, loading, error } = useDashboard()
-  const prices = usePrices()
+  const _prices = usePrices() // keep hook for future use
 
   const sourceTime = data?.updated_at
     ? new Date(data.updated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
@@ -141,8 +141,8 @@ export default function DashboardPage() {
         {/* Trend chart */}
         {data.trend_7d && <TrendChart data={data.trend_7d} />}
 
-        {/* Prices */}
-        <PriceCard prices={prices} />
+        {/* Feedback */}
+        <FeedbackCard />
       </div>
 
       {/* Floating map button — fixed position */}
