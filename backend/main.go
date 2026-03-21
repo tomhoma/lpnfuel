@@ -8,12 +8,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
 	"lpnfuel/api"
 	"lpnfuel/config"
 	"lpnfuel/db"
-	"lpnfuel/fetcher"
 )
 
 func main() {
@@ -31,45 +29,10 @@ func main() {
 	// Import geocoordinates from CSV on startup
 	if err := importGeoCSV(context.Background(), "../data/stations_geo.csv"); err != nil {
 		log.Printf("Geo import (non-fatal): %v", err)
-		// Also try current dir
 		_ = importGeoCSV(context.Background(), "data/stations_geo.csv")
 	}
 
-	// Initial fetch
-	ctx := context.Background()
-	log.Println("Running initial GAS fetch...")
-	if err := fetcher.FetchAndStore(ctx, cfg.GASUrl); err != nil {
-		log.Printf("Initial fetch error: %v", err)
-	}
-	if err := fetcher.FetchPricesIfStale(ctx, cfg.OilPriceAPI); err != nil {
-		log.Printf("Initial price fetch error: %v", err)
-	}
-
-	// Cron scheduler
-	loc, err := time.LoadLocation("Asia/Bangkok")
-	if err != nil {
-		loc = time.UTC
-	}
-
-	go func() {
-		ticker := time.NewTicker(cfg.CronInterval)
-		defer ticker.Stop()
-		for range ticker.C {
-			hour := time.Now().In(loc).Hour()
-			if hour < cfg.CronStartHour || hour >= cfg.CronEndHour {
-				continue
-			}
-			ctx := context.Background()
-			if err := fetcher.FetchAndStore(ctx, cfg.GASUrl); err != nil {
-				log.Printf("Cron fetch error: %v", err)
-			}
-			if err := fetcher.FetchPricesIfStale(ctx, cfg.OilPriceAPI); err != nil {
-				log.Printf("Cron price error: %v", err)
-			}
-		}
-	}()
-
-	router := api.NewRouter(cfg.CORSOrigins)
+	router := api.NewRouter(cfg.CORSOrigins, cfg.IngestAPIKey)
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Server listening on %s", addr)
 	if err := http.ListenAndServe(addr, router); err != nil {
@@ -92,7 +55,7 @@ func importGeoCSV(ctx context.Context, path string) error {
 
 	count := 0
 	for i, rec := range records {
-		if i == 0 { // skip header
+		if i == 0 {
 			continue
 		}
 		if len(rec) < 3 {

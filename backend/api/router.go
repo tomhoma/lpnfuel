@@ -6,7 +6,11 @@ import (
 	"github.com/rs/cors"
 )
 
-func NewRouter(corsOrigins []string) http.Handler {
+var ingestAPIKey string
+
+func NewRouter(corsOrigins []string, apiKey string) http.Handler {
+	ingestAPIKey = apiKey
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /api/v1/health", handleHealth)
@@ -15,11 +19,12 @@ func NewRouter(corsOrigins []string) http.Handler {
 	mux.HandleFunc("GET /api/v1/stations/{id}", handleStationByID)
 	mux.HandleFunc("GET /api/v1/dashboard", handleDashboard)
 	mux.HandleFunc("GET /api/v1/prices", handlePrices)
+	mux.HandleFunc("POST /api/v1/ingest", handleIngest)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: corsOrigins,
-		AllowedMethods: []string{"GET", "OPTIONS"},
-		AllowedHeaders: []string{"Content-Type"},
+		AllowedMethods: []string{"GET", "POST", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "X-API-Key"},
 	})
 
 	return c.Handler(loggingMiddleware(jsonMiddleware(mux)))

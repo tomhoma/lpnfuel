@@ -8,11 +8,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o lpnfuel .
 
 FROM alpine:3.19
-RUN apk add --no-cache tzdata ca-certificates chromium
-
-# chromedp needs to find Chrome
-ENV CHROME_BIN=/usr/bin/chromium-browser
-ENV CHROME_PATH=/usr/lib/chromium/
+RUN apk add --no-cache tzdata ca-certificates
 
 WORKDIR /app
 COPY --from=builder /app/lpnfuel .

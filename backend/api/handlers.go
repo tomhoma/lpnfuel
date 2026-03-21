@@ -2,12 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"io"
+	"log"
 	"net/http"
 	"sort"
 	"strconv"
 	"time"
 
 	"lpnfuel/db"
+	"lpnfuel/fetcher"
 	"lpnfuel/geo"
 	"lpnfuel/models"
 )
@@ -190,6 +193,78 @@ func handlePrices(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, models.PricesResponse{
 		Prices: prices,
 		Date:   time.Now().Format("2006-01-02"),
+	})
+}
+
+func handleIngest(w http.ResponseWriter, r *http.Request) {
+	// API key auth
+	key := r.Header.Get("X-API-Key")
+	if key == "" || key != ingestAPIKey {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid API key"})
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20)) // 1MB limit
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "read body: " + err.Error()})
+		return
+	}
+
+	records, err := fetcher.ParseGASRecords(string(body))
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parse: " + err.Error()})
+		return
+	}
+
+	ctx := r.Context()
+	updated := 0
+	for _, rec := range records {
+		station := models.Station{
+			ID:       rec.ID,
+			Brand:    rec.Brand,
+			Name:     rec.StationName,
+			District: rec.District,
+			HasE20:   rec.E20 != "-",
+			HasGas95: rec.Gas95 != "-",
+		}
+
+		if err := db.UpsertStation(ctx, station); err != nil {
+			log.Printf("ingest upsert station %s: %v", rec.ID, err)
+			continue
+		}
+
+		sourceUpdated := fetcher.ParseThaiDate(rec.LastUpdated)
+		eta := rec.TransportETA
+		if eta == "" {
+			eta = rec.Col10
+		}
+
+		fs := models.FuelStatus{
+			StationID:       rec.ID,
+			Gas95:           rec.Gas95,
+			Gas91:           rec.Gas91,
+			E20:             rec.E20,
+			Diesel:          rec.Diesel,
+			TransportStatus: rec.TransportStatus,
+			TransportETA:    eta,
+			SourceUpdated:   sourceUpdated,
+		}
+
+		if err := db.UpsertFuelStatus(ctx, fs); err != nil {
+			log.Printf("ingest upsert fuel_status %s: %v", rec.ID, err)
+			continue
+		}
+
+		_ = db.InsertHistory(ctx, fs)
+		updated++
+	}
+
+	_ = db.RefreshDistrictSummary(ctx)
+
+	log.Printf("Ingest: %d stations updated", updated)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":           "ok",
+		"stations_updated": updated,
 	})
 }
 
