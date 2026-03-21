@@ -1,0 +1,7 @@
+{
+  "name": "lpnfuel-scripts",
+  "private": true,
+  "dependencies": {
+    "playwright": "^1.51.1"
+  }
+}

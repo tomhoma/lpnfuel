@@ -7,7 +7,7 @@
 #   xclip -o | ./ingest.sh
 
 API_URL="${API_URL:-https://lpnfuel-production.up.railway.app/api/v1}"
-API_KEY="${API_KEY:-lpnfuel-dev-key-2024}"
+API_KEY="${API_KEY:-lpnfuel-dev-key-1980}"
 
 # Read input from argument or stdin
 if [ -n "$1" ]; then
