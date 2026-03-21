@@ -127,6 +127,7 @@ function DistrictOverlay() {
   return (
     <GeoJSON
       data={geoData}
+      interactive={false}
       style={(feature) => {
         const name = feature?.properties?.short_name || ''
         const color = DISTRICT_COLORS[name] || '#6B7280'
@@ -138,14 +139,6 @@ function DistrictOverlay() {
           fillOpacity: 0.06,
           dashArray: '4 4',
         }
-      }}
-      onEachFeature={(feature, layer) => {
-        const name = feature.properties?.name_th || feature.properties?.short_name || ''
-        layer.bindTooltip(name, {
-          permanent: false,
-          direction: 'center',
-          className: 'district-tooltip',
-        })
       }}
     />
   )
