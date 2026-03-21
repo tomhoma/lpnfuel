@@ -15,8 +15,8 @@ interface MapViewProps {
 // Lamphun province bounds — lock map to this area
 const LAMPHUN_CENTER: [number, number] = [18.10, 98.96]
 const LAMPHUN_BOUNDS = L.latLngBounds(
-  L.latLng(17.70, 98.55),  // SW corner
-  L.latLng(18.75, 99.35),  // NE corner
+  L.latLng(17.40, 98.55),  // SW corner - ขยายลงใต้เพื่อให้แผนที่เลื่อนขึ้นได้
+  L.latLng(18.65, 99.35),  // NE corner - ลดลงเพื่อตัดพื้นที่ว่างด้านบน
 )
 const MIN_ZOOM = 9
 const MAX_ZOOM = 16
@@ -25,7 +25,7 @@ const DEFAULT_ZOOM = 10
 // District colors (light, distinct)
 const DISTRICT_COLORS: Record<string, string> = {
   'เมืองลำพูน': '#3B82F6',
-  'แม่ทา': '#10B981',
+  'แม่ทา': '#2d2e2aff',
   'บ้านโฮ่ง': '#F59E0B',
   'ลี้': '#8B5CF6',
   'ทุ่งหัวช้าง': '#EF4444',
@@ -142,23 +142,60 @@ function DistrictOverlay() {
 
   if (!geoData) return null
 
+  // สร้าง mask: สี่เหลี่ยมครอบโลก เจาะรูตรงลำพูน
+  const worldRing: [number, number][] = [
+    [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
+  ]
+  const holes: [number, number][][] = []
+  geoData.features.forEach(f => {
+    const g = f.geometry
+    if (g.type === 'Polygon') {
+      holes.push(g.coordinates[0] as [number, number][])
+    } else if (g.type === 'MultiPolygon') {
+      g.coordinates.forEach(poly => holes.push(poly[0] as [number, number][]))
+    }
+  })
+
+  const maskGeoJson: GeoJSON.Feature = {
+    type: 'Feature',
+    properties: {},
+    geometry: {
+      type: 'Polygon',
+      coordinates: [worldRing, ...holes],
+    },
+  }
+
   return (
-    <GeoJSON
-      data={geoData}
-      interactive={false}
-      style={(feature) => {
-        const name = feature?.properties?.short_name || ''
-        const color = DISTRICT_COLORS[name] || '#6B7280'
-        return {
-          color: color,
-          weight: 1.5,
-          opacity: 0.6,
-          fillColor: color,
-          fillOpacity: 0.06,
-          dashArray: '4 4',
-        }
-      }}
-    />
+    <>
+      {/* Mask นอกลำพูน */}
+      <GeoJSON
+        data={maskGeoJson}
+        interactive={false}
+        style={{
+          color: 'transparent',
+          weight: 0,
+          fillColor: '#e5e7eb',
+          fillOpacity: 0.45,
+        }}
+      />
+      {/* เส้นขอบอำเภอ */}
+      <GeoJSON
+        data={geoData}
+        interactive={false}
+        style={(feature) => {
+          const name = feature?.properties?.short_name || ''
+          const color = DISTRICT_COLORS[name] || '#6B7280'
+          return {
+            color: color,
+            weight: 1.5,
+            opacity: 0.6,
+            fillColor: 'transparent',
+            fillOpacity: 0,
+            dashArray: '4 4',
+          }
+        }}
+      />
+    </>
   )
 }
 
@@ -173,6 +210,8 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       zoom={DEFAULT_ZOOM}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
+      maxBounds={LAMPHUN_BOUNDS}
+      maxBoundsViscosity={1.0}
       className="w-full h-full z-0"
       zoomControl={false}
       attributionControl={false}
