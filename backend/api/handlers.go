@@ -281,6 +281,43 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func handleUpdateGeo(w http.ResponseWriter, r *http.Request) {
+	key := r.Header.Get("X-API-Key")
+	if key == "" || key != ingestAPIKey {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid API key"})
+		return
+	}
+
+	id := r.PathValue("id")
+
+	var body struct {
+		Lat float64 `json:"lat"`
+		Lng float64 `json:"lng"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	if body.Lat == 0 && body.Lng == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "lat and lng required"})
+		return
+	}
+
+	if err := db.UpdateStationGeo(r.Context(), id, body.Lat, body.Lng); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	log.Printf("Geo updated: station %s → lat=%f lng=%f", id, body.Lat, body.Lng)
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status": "ok",
+		"id":     id,
+		"lat":    body.Lat,
+		"lng":    body.Lng,
+	})
+}
+
 func normalizeBrand(brand string) string {
 	// Normalize คาลเท๊กซ์ (mai tri ๊) → คาลเท็กซ์ (mai taikhu ็)
 	brand = strings.ReplaceAll(brand, "เท๊ก", "เท็ก")
