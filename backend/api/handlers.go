@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"lpnfuel/db"
@@ -219,11 +220,14 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	updated := 0
 	for _, rec := range records {
+		brand := normalizeBrand(strings.TrimSpace(rec.Brand))
+		name := strings.ReplaceAll(strings.TrimSpace(rec.StationName), "_", " ")
+
 		station := models.Station{
-			ID:       rec.ID,
-			Brand:    rec.Brand,
-			Name:     rec.StationName,
-			District: rec.District,
+			ID:       strings.TrimSpace(rec.ID),
+			Brand:    brand,
+			Name:     name,
+			District: strings.TrimSpace(rec.District),
 			HasE20:   rec.E20 != "-",
 			HasGas95: rec.Gas95 != "-",
 		}
@@ -266,6 +270,16 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 		"status":           "ok",
 		"stations_updated": updated,
 	})
+}
+
+func normalizeBrand(brand string) string {
+	// Normalize คาลเท๊กซ์ (mai tri ๊) → คาลเท็กซ์ (mai taikhu ็)
+	brand = strings.ReplaceAll(brand, "เท๊ก", "เท็ก")
+	// Normalize sub-brands
+	if strings.HasPrefix(brand, "บางจาก") && strings.Contains(brand, "ซัสโก้") {
+		return "บางจาก"
+	}
+	return brand
 }
 
 func fuelValue(fs models.FuelStatus, fuel string) string {

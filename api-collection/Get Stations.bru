@@ -1,0 +1,18 @@
+meta {
+  name: Get Stations
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/stations
+  body: none
+  auth: none
+}
+
+params:query {
+  ~brand: ปตท.
+  ~district: เมืองลำพูน
+  ~fuel: diesel
+  ~status: มี
+}

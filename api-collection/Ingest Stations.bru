@@ -1,0 +1,63 @@
+meta {
+  name: Ingest Stations
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/ingest
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+  Content-Type: application/json
+}
+
+body:json {
+  [
+    {
+      "ID": "1",
+      "Brand": "ปตท.",
+      "StationName": "สาขาป่าสัก(ศิริ)",
+      "District": "เมืองลำพูน",
+      "Gas95": "มี",
+      "Gas91": "มี",
+      "E20": "-",
+      "Diesel": "มี",
+      "TransportStatus": "",
+      "TransportETA": "",
+      "LastUpdated": "21/03/2569 07:00",
+      "Col10": ""
+    },
+    {
+      "ID": "2",
+      "Brand": "ปตท.",
+      "StationName": "สาขาเวียงยอง",
+      "District": "เมืองลำพูน",
+      "Gas95": "หมด",
+      "Gas91": "มี",
+      "E20": "-",
+      "Diesel": "หมด",
+      "TransportStatus": "กำลังจัดส่ง",
+      "TransportETA": "22/3/69 เวลา 05:00 น.",
+      "LastUpdated": "21/03/2569 07:19",
+      "Col10": ""
+    },
+    {
+      "ID": "3",
+      "Brand": "ปตท.",
+      "StationName": "สาขาประตูโขง",
+      "District": "เมืองลำพูน",
+      "Gas95": "มี",
+      "Gas91": "มี",
+      "E20": "มี",
+      "Diesel": "มี",
+      "TransportStatus": "",
+      "TransportETA": "",
+      "LastUpdated": "21/03/2569 06:30",
+      "Col10": ""
+    }
+  ]
+}
