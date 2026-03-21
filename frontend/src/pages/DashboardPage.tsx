@@ -13,15 +13,13 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 px-3 py-1">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
-            <div className="text-[10px] text-gray-400">ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a></div>
-          </div>
-        </header>
-        <div className="flex items-center justify-center h-[80vh]">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
+        <div className="text-center animate-fadeIn">
+          <img src="/logo.png" alt="LPN Fuel" className="w-28 h-28 mx-auto mb-4 drop-shadow-lg" />
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">LPN Fuel</h1>
+          <p className="text-sm text-gray-400 mb-6">ภาพรวมน้ำมันจังหวัดลำพูน</p>
+          <div className="w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-xs text-gray-400">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     )
@@ -85,8 +83,8 @@ export default function DashboardPage() {
                   ? Math.round(d.with_fuel / d.total_stations * 100)
                   : 0
                 return (
-                  <div key={d.district} className="flex items-center gap-3">
-                    <span className="text-sm flex-1 truncate">{d.district}</span>
+                  <Link key={d.district} to={`/?district=${encodeURIComponent(d.district)}`} className="flex items-center gap-3 active:bg-gray-50 rounded-lg -mx-1 px-1 py-0.5 transition">
+                    <span className="text-sm flex-1 truncate text-blue-700">{d.district}</span>
                     <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${pct > 50 ? 'bg-green-500' : pct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
@@ -96,7 +94,10 @@ export default function DashboardPage() {
                     <span className="text-xs text-gray-500 w-14 text-right">
                       {d.with_fuel}/{d.total_stations}
                     </span>
-                  </div>
+                    <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
                 )
               })}
             </div>
@@ -153,7 +154,7 @@ export default function DashboardPage() {
       {/* Floating map button — fixed position */}
       <Link
         to="/"
-        className="fixed bottom-14 right-3 z-50 bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
+        className="fixed top-11 right-3 z-50 bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
         title="กลับแผนที่"
       >
         <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

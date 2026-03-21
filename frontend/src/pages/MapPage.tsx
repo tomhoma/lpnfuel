@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useCallback, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
 import { useStations } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -26,11 +26,29 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
 export default function MapPage() {
   const { data, loading, error, lastUpdated } = useStations()
   const geo = useGeolocation()
+  const [searchParams, setSearchParams] = useSearchParams()
 
+  const [splashDone, setSplashDone] = useState(false)
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all')
   const [brandFilter, setBrandFilter] = useState<BrandFilter>('all')
   const [fuelFilter, setFuelFilter] = useState<FuelType | null>(null)
+  const [districtFilter, setDistrictFilter] = useState<string | null>(null)
   const [selectedStation, setSelectedStation] = useState<StationWithStatus | null>(null)
+
+  // Read district from URL params (e.g. /?district=เมืองลำพูน)
+  useEffect(() => {
+    const d = searchParams.get('district')
+    if (d) {
+      setDistrictFilter(d)
+      searchParams.delete('district')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSplashDone(true), 1500)
+    return () => clearTimeout(timer)
+  }, [])
 
   const filteredStations = useMemo(() => {
     if (!data?.stations) return []
@@ -46,6 +64,9 @@ export default function MapPage() {
     }
 
     return stations.filter(s => {
+      // District filter
+      if (districtFilter && s.district !== districtFilter) return false
+
       // Brand filter
       if (brandFilter !== 'all' && s.brand !== brandFilter) return false
 
@@ -59,22 +80,17 @@ export default function MapPage() {
 
       return true
     })
-  }, [data, statusFilter, brandFilter, fuelFilter, geo.lat, geo.lng])
+  }, [data, statusFilter, brandFilter, fuelFilter, districtFilter, geo.lat, geo.lng])
 
   const handleStationClick = useCallback((station: StationWithStatus) => {
     setSelectedStation(station)
   }, [])
 
-  if (loading) {
+  if (loading || !splashDone) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
         <div className="text-center animate-fadeIn">
-          {/* Fuel pump icon */}
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-green-600 flex items-center justify-center shadow-lg">
-            <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11l4.553-2.276A1 1 0 0121 9.618v6.764a1 1 0 01-1.447.894L15 15M3 6h8a2 2 0 012 2v8a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2z" />
-            </svg>
-          </div>
+          <img src="/logo.png" alt="LPN Fuel" className="w-28 h-28 mx-auto mb-4 drop-shadow-lg" />
           <h1 className="text-2xl font-bold text-gray-800 mb-1">LPN Fuel</h1>
           <p className="text-sm text-gray-400 mb-6">สถานะน้ำมันจังหวัดลำพูน</p>
           <div className="w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -128,6 +144,16 @@ export default function MapPage() {
         onBrand={setBrandFilter}
         stationCount={filteredStations.length}
       />
+
+      {/* District filter badge */}
+      {districtFilter && (
+        <div className="bg-blue-50 border-b border-blue-100 px-3 py-1 flex items-center justify-between">
+          <span className="text-xs text-blue-700">อ.{districtFilter}</span>
+          <button onClick={() => setDistrictFilter(null)} className="text-xs text-blue-500 active:scale-95">
+            ดูทั้งหมด &times;
+          </button>
+        </div>
+      )}
 
       {/* Map */}
       <div className="flex-1 relative">
