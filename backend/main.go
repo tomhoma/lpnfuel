@@ -53,18 +53,38 @@ func importGeoCSV(ctx context.Context, path string) error {
 		return err
 	}
 
+	// Find column indices from header
+	if len(records) == 0 {
+		return fmt.Errorf("empty CSV")
+	}
+	header := records[0]
+	idIdx, latIdx, lngIdx := -1, -1, -1
+	for i, col := range header {
+		switch col {
+		case "id":
+			idIdx = i
+		case "lat":
+			latIdx = i
+		case "lng":
+			lngIdx = i
+		}
+	}
+	if idIdx < 0 || latIdx < 0 || lngIdx < 0 {
+		return fmt.Errorf("CSV missing required columns (id, lat, lng)")
+	}
+
 	count := 0
 	for i, rec := range records {
 		if i == 0 {
 			continue
 		}
-		if len(rec) < 3 {
+		if len(rec) <= latIdx || len(rec) <= lngIdx {
 			continue
 		}
-		id := rec[0]
-		lat, err1 := strconv.ParseFloat(rec[1], 64)
-		lng, err2 := strconv.ParseFloat(rec[2], 64)
-		if err1 != nil || err2 != nil {
+		id := rec[idIdx]
+		lat, err1 := strconv.ParseFloat(rec[latIdx], 64)
+		lng, err2 := strconv.ParseFloat(rec[lngIdx], 64)
+		if err1 != nil || err2 != nil || (lat == 0 && lng == 0) {
 			continue
 		}
 		if err := db.UpdateStationGeo(ctx, id, lat, lng); err != nil {
