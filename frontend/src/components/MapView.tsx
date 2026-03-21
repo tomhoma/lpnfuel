@@ -13,7 +13,7 @@ interface MapViewProps {
 }
 
 // Lamphun province bounds — lock map to this area
-const LAMPHUN_CENTER: [number, number] = [18.20, 98.962983]
+const LAMPHUN_CENTER: [number, number] = [18.00, 98.962983]
 const LAMPHUN_BOUNDS = L.latLngBounds(
   L.latLng(17.70, 98.55),  // SW corner
   L.latLng(18.75, 99.35),  // NE corner
@@ -124,7 +124,7 @@ function DistrictOverlay() {
     fetch('/lamphun-districts.geojson')
       .then(r => r.json())
       .then(data => setGeoData(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [])
 
   if (!geoData) return null
