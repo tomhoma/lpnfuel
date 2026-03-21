@@ -5,14 +5,14 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/stations
+  url: {{baseUrl}}/stations?fuel=diesel&status=มี
   body: none
   auth: none
 }
 
 params:query {
+  fuel: diesel
+  status: มี
   ~brand: ปตท.
   ~district: เมืองลำพูน
-  ~fuel: diesel
-  ~status: มี
 }
