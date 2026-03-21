@@ -140,46 +140,49 @@ function DistrictOverlay() {
       .catch(() => { })
   }, [])
 
-  if (!geoData) return null
-
-  // สร้าง mask: สี่เหลี่ยมครอบโลก เจาะรูตรงลำพูน
-  const worldRing: [number, number][] = [
-    [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
-  ]
-  const holes: [number, number][][] = []
-  geoData.features.forEach(f => {
-    const g = f.geometry
-    if (g.type === 'Polygon') {
-      holes.push(g.coordinates[0] as [number, number][])
-    } else if (g.type === 'MultiPolygon') {
-      g.coordinates.forEach(poly => holes.push(poly[0] as [number, number][]))
+  const maskGeoJson = useMemo(() => {
+    if (!geoData) return null
+    const worldRing: [number, number][] = [
+      [-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]
+    ]
+    const holes: [number, number][][] = []
+    geoData.features.forEach(f => {
+      const g = f.geometry
+      if (g.type === 'Polygon') {
+        holes.push(g.coordinates[0] as [number, number][])
+      } else if (g.type === 'MultiPolygon') {
+        g.coordinates.forEach(poly => holes.push(poly[0] as [number, number][]))
+      }
+    })
+    return {
+      type: 'Feature' as const,
+      properties: {},
+      geometry: {
+        type: 'Polygon' as const,
+        coordinates: [worldRing, ...holes],
+      },
     }
-  })
+  }, [geoData])
 
-  const maskGeoJson: GeoJSON.Feature = {
-    type: 'Feature',
-    properties: {},
-    geometry: {
-      type: 'Polygon',
-      coordinates: [worldRing, ...holes],
-    },
-  }
+  if (!maskGeoJson || !geoData) return null
 
   return (
     <>
       {/* Mask นอกลำพูน */}
       <GeoJSON
+        key="mask"
         data={maskGeoJson}
         interactive={false}
         style={{
           color: 'transparent',
           weight: 0,
           fillColor: '#000000',
-          fillOpacity: 0.35,
+          fillOpacity: 0.2,
         }}
       />
       {/* เส้นขอบอำเภอ */}
       <GeoJSON
+        key="districts"
         data={geoData}
         interactive={false}
         style={(feature) => {
