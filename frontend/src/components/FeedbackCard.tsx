@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbybzx0WZ2RVi-JWcnCO8dVUWtUZ8p6z4l-pJeJdwo70zA0x_WfinaJzp0x_Qd_kaQqA/exec'
+const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
 type FeedbackType = 'แจ้งข้อผิดพลาด' | 'แนะนำ' | 'อื่นๆ'
 
@@ -130,7 +130,15 @@ export default function FeedbackCard() {
                   disabled={!message.trim() || sending}
                   className="w-full py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed active:scale-[0.98] transition"
                 >
-                  {sending ? 'กำลังส่ง...' : 'ส่งข้อความ'}
+                  {sending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      กำลังส่ง...
+                    </span>
+                  ) : 'ส่งข้อความ'}
                 </button>
               </>
             )}

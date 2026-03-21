@@ -4,7 +4,7 @@ import FuelBadge from './FuelBadge'
 import TransportBadge from './TransportBadge'
 import { formatDistance } from '../hooks/useDistance'
 
-const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbybzx0WZ2RVi-JWcnCO8dVUWtUZ8p6z4l-pJeJdwo70zA0x_WfinaJzp0x_Qd_kaQqA/exec'
+const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
 interface BottomSheetProps {
   station: StationWithStatus | null
@@ -192,7 +192,15 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
                   disabled={!geoDetail.trim() || geoSending}
                   className="flex-1 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-40 transition"
                 >
-                  {geoSending ? 'กำลังส่ง...' : 'ส่งแจ้งตำแหน่ง'}
+                  {geoSending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      กำลังส่ง...
+                    </span>
+                  ) : 'ส่งแจ้งตำแหน่ง'}
                 </button>
               </div>
             </div>

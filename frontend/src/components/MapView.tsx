@@ -113,14 +113,16 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     }
 
     if (!hasInitialFit.current) {
-      map.fitBounds(bounds, { ...fitOpts, maxZoom: 13 })
+      // Initial: zoom out ให้เห็นทั้งจังหวัด
+      map.fitBounds(bounds, { ...fitOpts, maxZoom: DEFAULT_ZOOM })
       hasInitialFit.current = true
       prevCount.current = stations.length
       return
     }
 
     if (stations.length !== prevCount.current) {
-      map.flyToBounds(bounds, { ...fitOpts, maxZoom: 14, duration: 0.5 })
+      // Filter เปลี่ยน: zoom เข้าหาปั๊มที่เหลือ
+      map.flyToBounds(bounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
       prevCount.current = stations.length
     }
   }, [stations, map])
