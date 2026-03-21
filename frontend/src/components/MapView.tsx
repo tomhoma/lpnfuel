@@ -13,14 +13,14 @@ interface MapViewProps {
 }
 
 // Lamphun province bounds — lock map to this area
-const LAMPHUN_CENTER: [number, number] = [18.00, 98.962983]
+const LAMPHUN_CENTER: [number, number] = [18.10, 98.96]
 const LAMPHUN_BOUNDS = L.latLngBounds(
   L.latLng(17.70, 98.55),  // SW corner
   L.latLng(18.75, 99.35),  // NE corner
 )
 const MIN_ZOOM = 9
 const MAX_ZOOM = 16
-const DEFAULT_ZOOM = 11
+const DEFAULT_ZOOM = 10
 
 // District colors (light, distinct)
 const DISTRICT_COLORS: Record<string, string> = {
@@ -98,20 +98,30 @@ function FlyToUser({ lat, lng }: { lat: number; lng: number }) {
 
 function FitBounds({ stations }: { stations: StationWithStatus[] }) {
   const map = useMap()
-  const isFirstRender = useRef(true)
+  const prevCount = useRef(stations.length)
+  const hasInitialFit = useRef(false)
 
   useEffect(() => {
-    // Skip the initial render — only fit when filter changes
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
     const points = stations.filter(s => s.lat != null && s.lng != null)
     if (points.length === 0) return
 
     const bounds = L.latLngBounds(points.map(s => L.latLng(s.lat!, s.lng!)))
-    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 14, duration: 0.5 })
+    // padding: [top, right, bottom, left] — bottom เยอะกว่าเผื่อ stats bar
+    const padding: [number, number, number, number] = [20, 20, 100, 80]
+
+    if (!hasInitialFit.current) {
+      // ครั้งแรก: fitBounds ทันทีไม่มี animation
+      map.fitBounds(bounds, { padding, maxZoom: 13 })
+      hasInitialFit.current = true
+      prevCount.current = stations.length
+      return
+    }
+
+    // filter เปลี่ยน: flyToBounds with animation
+    if (stations.length !== prevCount.current) {
+      map.flyToBounds(bounds, { padding, maxZoom: 14, duration: 0.5 })
+      prevCount.current = stations.length
+    }
   }, [stations, map])
 
   return null
