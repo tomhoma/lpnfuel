@@ -173,8 +173,6 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       zoom={DEFAULT_ZOOM}
       minZoom={MIN_ZOOM}
       maxZoom={MAX_ZOOM}
-      maxBounds={LAMPHUN_BOUNDS}
-      maxBoundsViscosity={1.0}
       className="w-full h-full z-0"
       zoomControl={false}
       attributionControl={false}
