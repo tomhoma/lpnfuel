@@ -211,7 +211,16 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	records, err := fetcher.ParseGASRecords(string(body))
+	// If body is a JSON-escaped string (e.g. "[{\"Brand\":...}]"), unescape it
+	bodyStr := string(body)
+	if len(bodyStr) > 2 && bodyStr[0] == '"' {
+		var unescaped string
+		if err := json.Unmarshal(body, &unescaped); err == nil {
+			bodyStr = unescaped
+		}
+	}
+
+	records, err := fetcher.ParseGASRecords(bodyStr)
 	if err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "parse: " + err.Error()})
 		return
