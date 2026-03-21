@@ -16,7 +16,7 @@ interface MapViewProps {
 const LAMPHUN_CENTER: [number, number] = [18.10, 98.96]
 const LAMPHUN_BOUNDS = L.latLngBounds(
   L.latLng(17.40, 98.55),  // SW corner - ขยายลงใต้เพื่อให้แผนที่เลื่อนขึ้นได้
-  L.latLng(18.65, 99.35),  // NE corner - ลดลงเพื่อตัดพื้นที่ว่างด้านบน
+  L.latLng(18.75, 99.35),  // NE corner
 )
 const MIN_ZOOM = 9
 const MAX_ZOOM = 16
