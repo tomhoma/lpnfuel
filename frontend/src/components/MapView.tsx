@@ -106,20 +106,21 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     if (points.length === 0) return
 
     const bounds = L.latLngBounds(points.map(s => L.latLng(s.lat!, s.lng!)))
-    // padding: [top, right, bottom, left] — bottom เยอะกว่าเผื่อ stats bar
-    const padding: [number, number, number, number] = [20, 20, 100, 80]
+    // paddingTopLeft: [left, top], paddingBottomRight: [right, bottom]
+    const fitOpts = {
+      paddingTopLeft: [80, 20] as [number, number],    // ซ้ายเผื่อปุ่มน้ำมัน
+      paddingBottomRight: [20, 100] as [number, number], // ล่างเผื่อ stats bar
+    }
 
     if (!hasInitialFit.current) {
-      // ครั้งแรก: fitBounds ทันทีไม่มี animation
-      map.fitBounds(bounds, { padding, maxZoom: 13 })
+      map.fitBounds(bounds, { ...fitOpts, maxZoom: 13 })
       hasInitialFit.current = true
       prevCount.current = stations.length
       return
     }
 
-    // filter เปลี่ยน: flyToBounds with animation
     if (stations.length !== prevCount.current) {
-      map.flyToBounds(bounds, { padding, maxZoom: 14, duration: 0.5 })
+      map.flyToBounds(bounds, { ...fitOpts, maxZoom: 14, duration: 0.5 })
       prevCount.current = stations.length
     }
   }, [stations, map])
