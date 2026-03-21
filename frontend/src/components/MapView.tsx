@@ -13,7 +13,7 @@ interface MapViewProps {
 }
 
 // Lamphun province bounds — lock map to this area
-const LAMPHUN_CENTER: [number, number] = [18.45, 98.98]
+const LAMPHUN_CENTER: [number, number] = [18.135286, 98.962983]
 const LAMPHUN_BOUNDS = L.latLngBounds(
   L.latLng(17.70, 98.55),  // SW corner
   L.latLng(18.75, 99.35),  // NE corner

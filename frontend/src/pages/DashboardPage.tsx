@@ -15,11 +15,9 @@ export default function DashboardPage() {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
         <div className="text-center animate-fadeIn">
-          <img src="/logo.png" alt="LPN Fuel" className="w-28 h-28 mx-auto mb-4 drop-shadow-lg" />
-          <h1 className="text-2xl font-bold text-gray-800 mb-1">LPN Fuel</h1>
-          <p className="text-sm text-gray-400 mb-6">ภาพรวมน้ำมันจังหวัดลำพูน</p>
+          <img src="/logo.png" alt="LPN Fuel" className="w-48 h-48 mx-auto mb-6 drop-shadow-xl" />
           <div className="w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-gray-400">กำลังโหลดข้อมูล...</p>
+          <p className="text-sm text-gray-400">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     )

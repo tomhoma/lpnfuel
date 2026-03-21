@@ -65,7 +65,7 @@ func handleStations(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, models.StationsResponse{
 		Stations:  filtered,
 		Summary:   summary,
-		UpdatedAt: time.Now(),
+		UpdatedAt: db.GetLastFetchTime(ctx),
 	})
 }
 
@@ -181,7 +181,7 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		ByBrand:        byBrand,
 		IncomingSupply: incoming,
 		Trend7d:        trend,
-		UpdatedAt:      time.Now(),
+		UpdatedAt:      db.GetLastFetchTime(ctx),
 	})
 }
 
