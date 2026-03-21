@@ -67,10 +67,18 @@ export default function MapPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">กำลังโหลดข้อมูลปั๊ม...</p>
+      <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
+        <div className="text-center animate-fadeIn">
+          {/* Fuel pump icon */}
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-green-600 flex items-center justify-center shadow-lg">
+            <svg className="w-9 h-9 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11l4.553-2.276A1 1 0 0121 9.618v6.764a1 1 0 01-1.447.894L15 15M3 6h8a2 2 0 012 2v8a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">LPN Fuel</h1>
+          <p className="text-sm text-gray-400 mb-6">สถานะน้ำมันจังหวัดลำพูน</p>
+          <div className="w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-xs text-gray-400">กำลังโหลดข้อมูล...</p>
         </div>
       </div>
     )

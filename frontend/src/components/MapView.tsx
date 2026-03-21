@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState } from 'react'
+import { useMemo, useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { StationWithStatus, FuelType } from '../types'
@@ -91,6 +91,27 @@ function FlyToUser({ lat, lng }: { lat: number; lng: number }) {
   return null
 }
 
+function FitBounds({ stations }: { stations: StationWithStatus[] }) {
+  const map = useMap()
+  const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    // Skip the initial render — only fit when filter changes
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
+    const points = stations.filter(s => s.lat != null && s.lng != null)
+    if (points.length === 0) return
+
+    const bounds = L.latLngBounds(points.map(s => L.latLng(s.lat!, s.lng!)))
+    map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 14, duration: 0.5 })
+  }, [stations, map])
+
+  return null
+}
+
 function DistrictOverlay() {
   const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null)
 
@@ -151,6 +172,9 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; OSM'
       />
+
+      {/* Auto-fit to filtered stations */}
+      <FitBounds stations={stations} />
 
       {/* District boundaries */}
       <DistrictOverlay />
