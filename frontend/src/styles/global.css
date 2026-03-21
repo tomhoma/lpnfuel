@@ -1,0 +1,62 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: #ffffff;
+  color: #1A1A2E;
+  overscroll-behavior: none;
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  font-family: 'Sarabun', sans-serif;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+
+/* Custom station marker */
+.station-marker {
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  color: white;
+  cursor: pointer;
+}
+
+.station-marker.available  { background: #16A34A; }
+.station-marker.empty      { background: #DC2626; }
+.station-marker.incoming   { background: #CA8A04; }
+
+/* Bottom sheet */
+.bottom-sheet {
+  transition: transform 0.3s ease;
+}
+
+/* Loading skeleton */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.skeleton {
+  background: #F3F4F6;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Scrollbar hide for filter pills */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
