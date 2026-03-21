@@ -135,7 +135,7 @@ export default function MapPage() {
         <FuelSelector selected={fuelFilter} onSelect={setFuelFilter} />
 
         {/* Floating stats overlay */}
-        <StatsBar summary={summary} lastUpdated={lastUpdated} />
+        <StatsBar summary={summary} />
 
         {/* Right-side floating buttons */}
         <div className="absolute bottom-14 right-3 z-[500] flex flex-col gap-2">

@@ -7,10 +7,22 @@ export default function DashboardPage() {
   const { data, loading, error } = useDashboard()
   const prices = usePrices()
 
+  const sourceTime = data?.updated_at
+    ? new Date(data.updated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+    : null
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 px-3 py-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
+            <div className="text-[10px] text-gray-400">ข้อมูลจาก FuelRadar</div>
+          </div>
+        </header>
+        <div className="flex items-center justify-center h-[80vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
       </div>
     )
   }
@@ -27,16 +39,15 @@ export default function DashboardPage() {
   const pct = overall.total > 0 ? Math.round(overall.with_fuel / overall.total * 100) : 0
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-10">
-        <div>
-          <h1 className="text-lg font-bold">Dashboard</h1>
-          <p className="text-xs text-gray-400">ภาพรวมน้ำมันลำพูน</p>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header — same layout as MapPage */}
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 sticky top-0 z-10 px-3 py-1">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
+          <div className="text-[10px] text-gray-400">
+            ข้อมูลจาก FuelRadar {sourceTime && <span>· {sourceTime}</span>}
+          </div>
         </div>
-        <Link to="/" className="text-sm text-primary font-medium">
-          กลับแผนที่
-        </Link>
       </header>
 
       <div className="max-w-lg mx-auto p-4 space-y-4">
@@ -59,7 +70,7 @@ export default function DashboardPage() {
 
           {overall.diesel_crisis && (
             <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 font-medium">
-              ⚠️ วิกฤตดีเซล — มีเพียง {overall.diesel_count}/{overall.total} ปั๊ม
+              วิกฤตดีเซล — มีเพียง {overall.diesel_count}/{overall.total} ปั๊ม
             </div>
           )}
         </div>
@@ -113,7 +124,7 @@ export default function DashboardPage() {
         {incoming_supply?.length > 0 && (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
             <h3 className="text-sm font-bold mb-3">
-              🚚 น้ำมันกำลังมา ({incoming_supply.length} ปั๊ม)
+              น้ำมันกำลังมา ({incoming_supply.length} ปั๊ม)
             </h3>
             <div className="space-y-2">
               {incoming_supply.map(s => (
@@ -138,6 +149,17 @@ export default function DashboardPage() {
         {/* Prices */}
         <PriceCard prices={prices} />
       </div>
+
+      {/* Floating map button — fixed position */}
+      <Link
+        to="/"
+        className="fixed bottom-14 right-3 z-50 bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
+        title="กลับแผนที่"
+      >
+        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l5.447 2.724A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+      </Link>
     </div>
   )
 }
