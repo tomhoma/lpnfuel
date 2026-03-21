@@ -174,8 +174,8 @@ function DistrictOverlay() {
         style={{
           color: 'transparent',
           weight: 0,
-          fillColor: '#e5e7eb',
-          fillOpacity: 0.45,
+          fillColor: '#000000',
+          fillOpacity: 0.35,
         }}
       />
       {/* เส้นขอบอำเภอ */}
