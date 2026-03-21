@@ -1,0 +1,45 @@
+meta {
+  name: Update Station Geo
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/stations/1/geo
+  body: json
+  auth: none
+}
+
+headers {
+  X-API-Key: {{apiKey}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "lat": 18.5742,
+    "lng": 98.9812
+  }
+}
+
+docs {
+  ## Update Station Geo Location
+
+  อัพเดทพิกัด GPS ของปั๊มน้ำมัน
+
+  **URL:** `PUT /api/v1/stations/{id}/geo`
+
+  **Headers:**
+  - `X-API-Key` - API key สำหรับ authentication
+
+  **Body:**
+  ```json
+  {
+    "lat": 18.5742,
+    "lng": 98.9812
+  }
+  ```
+
+  **เปลี่ยน station ID:**
+  แก้ตัวเลขใน URL เช่น `/stations/5/geo` สำหรับปั๊ม ID 5
+}

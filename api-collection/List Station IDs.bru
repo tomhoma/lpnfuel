@@ -1,0 +1,26 @@
+meta {
+  name: List Station IDs
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{baseUrl}}/stations
+  body: none
+  auth: none
+}
+
+docs {
+  ## List Station IDs
+
+  ดึงรายชื่อปั๊มทั้งหมดพร้อม ID และพิกัด GPS
+
+  ใช้สำหรับดู ID ก่อน update geo location
+
+  **Response จะมี:**
+  - `id` - รหัสปั๊ม
+  - `name` - ชื่อปั๊ม
+  - `brand` - แบรนด์
+  - `district` - อำเภอ
+  - `lat`, `lng` - พิกัด GPS (0 = ยังไม่มีพิกัด)
+}
