@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Tooltip, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Tooltip, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { StationWithStatus, FuelType } from '../types'
 import 'leaflet/dist/leaflet.css'
@@ -21,6 +21,18 @@ const LAMPHUN_BOUNDS = L.latLngBounds(
 const MIN_ZOOM = 9
 const MAX_ZOOM = 16
 const DEFAULT_ZOOM = 11
+
+// District colors (light, distinct)
+const DISTRICT_COLORS: Record<string, string> = {
+  'เมืองลำพูน': '#3B82F6',
+  'แม่ทา': '#10B981',
+  'บ้านโฮ่ง': '#F59E0B',
+  'ลี้': '#8B5CF6',
+  'ทุ่งหัวช้าง': '#EF4444',
+  'ป่าซาง': '#EC4899',
+  'บ้านธิ': '#06B6D4',
+  'เวียงหนองล่อง': '#F97316',
+}
 
 function getMarkerColor(station: StationWithStatus, fuel: FuelType | null): string {
   if (station.transport_status === 'กำลังจัดส่ง' || station.transport_status === 'กำลังลงน้ำมัน') {
@@ -79,6 +91,45 @@ function FlyToUser({ lat, lng }: { lat: number; lng: number }) {
   return null
 }
 
+function DistrictOverlay() {
+  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection | null>(null)
+
+  useEffect(() => {
+    fetch('/lamphun-districts.geojson')
+      .then(r => r.json())
+      .then(data => setGeoData(data))
+      .catch(() => {})
+  }, [])
+
+  if (!geoData) return null
+
+  return (
+    <GeoJSON
+      data={geoData}
+      style={(feature) => {
+        const name = feature?.properties?.short_name || ''
+        const color = DISTRICT_COLORS[name] || '#6B7280'
+        return {
+          color: color,
+          weight: 1.5,
+          opacity: 0.6,
+          fillColor: color,
+          fillOpacity: 0.06,
+          dashArray: '4 4',
+        }
+      }}
+      onEachFeature={(feature, layer) => {
+        const name = feature.properties?.name_th || feature.properties?.short_name || ''
+        layer.bindTooltip(name, {
+          permanent: false,
+          direction: 'center',
+          className: 'district-tooltip',
+        })
+      }}
+    />
+  )
+}
+
 export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng }: MapViewProps) {
   const markerSize = useMemo(() => {
     return window.innerWidth < 640 ? 11 : 9
@@ -100,6 +151,9 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; OSM'
       />
+
+      {/* District boundaries */}
+      <DistrictOverlay />
 
       {stations.map((s) => {
         if (s.lat == null || s.lng == null) return null
