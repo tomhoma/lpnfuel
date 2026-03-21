@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
 import { useStations } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
@@ -116,20 +117,34 @@ export default function MapPage() {
           userLng={geo.lng}
         />
 
-        {/* Locate me button */}
-        <button
-          onClick={geo.request}
-          className="absolute bottom-20 right-3 z-[500] bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200"
-          title="ตำแหน่งของฉัน"
-        >
-          <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-          </svg>
-        </button>
-      </div>
+        {/* Floating stats overlay */}
+        <StatsBar summary={summary} lastUpdated={lastUpdated} />
 
-      {/* Stats bar */}
-      <StatsBar summary={summary} lastUpdated={lastUpdated} />
+        {/* Right-side floating buttons */}
+        <div className="absolute bottom-4 right-3 z-[500] flex flex-col gap-2">
+          {/* Locate me */}
+          <button
+            onClick={geo.request}
+            className="bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
+            title="ตำแหน่งของฉัน"
+          >
+            <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m0 16v2M2 12h2m16 0h2" />
+            </svg>
+          </button>
+          {/* Dashboard */}
+          <Link
+            to="/dashboard"
+            className="bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
+            title="Dashboard"
+          >
+            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </Link>
+        </div>
+      </div>
 
       {/* Bottom sheet */}
       <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} />
