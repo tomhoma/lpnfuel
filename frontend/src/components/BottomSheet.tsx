@@ -24,6 +24,15 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [station, onClose])
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    if (station) document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [station, onClose])
+
   if (!station) return null
 
   const navURL = station.lat && station.lng
@@ -31,47 +40,49 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     : null
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/30">
+    <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/20 animate-fadeIn">
       <div
         ref={sheetRef}
-        className="bottom-sheet bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[70vh] overflow-y-auto"
+        className="bottom-sheet bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[60vh] overflow-y-auto animate-slideUp"
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        {/* Handle bar */}
+        <div className="flex justify-center pt-2.5 pb-1 sticky top-0 bg-white rounded-t-2xl">
+          <div className="w-8 h-1 bg-gray-300 rounded-full" />
         </div>
 
-        <div className="px-4 pb-6 space-y-4">
+        <div className="px-4 pb-5 space-y-3">
           {/* Header */}
-          <div>
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-xs font-medium text-gray-400">{station.brand}</span>
-                <h2 className="text-lg font-bold leading-tight">{station.name}</h2>
-                <span className="text-sm text-gray-500">{station.district}</span>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                  {station.brand}
+                </span>
+                {station.distance_km != null && (
+                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    {formatDistance(station.distance_km)}
+                  </span>
+                )}
               </div>
-              <button
-                onClick={onClose}
-                className="p-1 -mr-1 text-gray-400 hover:text-gray-600"
-                aria-label="ปิด"
-              >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <h2 className="text-base font-bold leading-snug mt-1">{station.name}</h2>
+              <span className="text-xs text-gray-400">{station.district}</span>
             </div>
-            {station.distance_km != null && (
-              <span className="text-xs text-primary font-medium">
-                {formatDistance(station.distance_km)}
-              </span>
-            )}
+            <button
+              onClick={onClose}
+              className="p-1.5 -mr-1.5 -mt-0.5 text-gray-300 hover:text-gray-500 active:scale-90 transition"
+              aria-label="ปิด"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
-          {/* Fuel Status */}
-          <div className="flex flex-wrap gap-2">
+          {/* Fuel Status Grid */}
+          <div className="grid grid-cols-4 gap-1.5">
             <FuelBadge label="ดีเซล" value={station.diesel} />
             <FuelBadge label="แก๊ส 91" value={station.gas91} />
-            <FuelBadge label="เบนซิน 95" value={station.gas95} />
+            <FuelBadge label="95" value={station.gas95} />
             <FuelBadge label="E20" value={station.e20} />
           </div>
 
@@ -82,8 +93,10 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
 
           {/* Updated at */}
           {station.source_updated && (
-            <p className="text-xs text-gray-400">
-              อัปเดตจากแหล่งข้อมูล: {new Date(station.source_updated).toLocaleString('th-TH')}
+            <p className="text-[10px] text-gray-400">
+              อัปเดต: {new Date(station.source_updated).toLocaleString('th-TH', {
+                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+              })}
             </p>
           )}
 
@@ -93,8 +106,12 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
               href={navURL}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full py-3 text-center bg-primary text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
+              className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all text-sm"
             >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
               นำทางไปปั๊มนี้
             </a>
           )}

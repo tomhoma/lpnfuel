@@ -103,6 +103,7 @@ export default function MapPage() {
         onStatus={setStatusFilter}
         onBrand={setBrandFilter}
         onFuel={setFuelFilter}
+        stationCount={filteredStations.length}
       />
 
       {/* Map */}
