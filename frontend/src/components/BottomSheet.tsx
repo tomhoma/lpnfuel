@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { StationWithStatus } from '../types'
 import FuelBadge from './FuelBadge'
 import TransportBadge from './TransportBadge'
 import { formatDistance } from '../hooks/useDistance'
+
+const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbybzx0WZ2RVi-JWcnCO8dVUWtUZ8p6z4l-pJeJdwo70zA0x_WfinaJzp0x_Qd_kaQqA/exec'
 
 interface BottomSheetProps {
   station: StationWithStatus | null
@@ -11,6 +13,10 @@ interface BottomSheetProps {
 
 export default function BottomSheet({ station, onClose }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
+  const [showGeoReport, setShowGeoReport] = useState(false)
+  const [geoDetail, setGeoDetail] = useState('')
+  const [geoSending, setGeoSending] = useState(false)
+  const [geoSent, setGeoSent] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -32,6 +38,42 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     if (station) document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [station, onClose])
+
+  // Reset geo report state when station changes
+  useEffect(() => {
+    setShowGeoReport(false)
+    setGeoDetail('')
+    setGeoSending(false)
+    setGeoSent(false)
+  }, [station?.id])
+
+  const submitGeoReport = async () => {
+    if (!station || !geoDetail.trim()) return
+    setGeoSending(true)
+    try {
+      await fetch(FEEDBACK_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'geo_report',
+          station_id: station.id,
+          station_name: station.name,
+          brand: station.brand,
+          district: station.district,
+          current_lat: station.lat,
+          current_lng: station.lng,
+          detail: geoDetail.trim(),
+          timestamp: new Date().toISOString(),
+        }),
+      })
+      setGeoSent(true)
+      setGeoSending(false)
+    } catch {
+      setGeoSending(false)
+      alert('ส่งไม่สำเร็จ กรุณาลองใหม่')
+    }
+  }
 
   if (!station) return null
 
@@ -114,6 +156,53 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
               </svg>
               นำทางไปปั๊มนี้
             </a>
+          )}
+
+          {/* Geo report */}
+          {!showGeoReport && !geoSent && (
+            <button
+              onClick={() => setShowGeoReport(true)}
+              className="w-full text-center text-[11px] text-gray-400 hover:text-red-500 transition py-1"
+            >
+              แจ้งตำแหน่งบนแผนที่ไม่ถูกต้อง
+            </button>
+          )}
+
+          {showGeoReport && !geoSent && (
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-xs text-gray-500">
+                กรุณาระบุตำแหน่งที่ถูกต้องของปั๊ม เช่น อยู่ใกล้สถานที่อะไร ถนนอะไร จุดสังเกตคืออะไร เพื่อให้ admin ค้นหาใน Google Maps
+              </p>
+              <textarea
+                value={geoDetail}
+                onChange={(e) => setGeoDetail(e.target.value)}
+                placeholder="เช่น ปั๊มอยู่ตรงแยกไฟแดงหน้าโลตัส ถนน 106 ฝั่งขาเข้าเมือง"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowGeoReport(false)}
+                  className="flex-1 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  onClick={submitGeoReport}
+                  disabled={!geoDetail.trim() || geoSending}
+                  className="flex-1 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-40 transition"
+                >
+                  {geoSending ? 'กำลังส่ง...' : 'ส่งแจ้งตำแหน่ง'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {geoSent && (
+            <div className="text-center py-2">
+              <p className="text-sm text-green-600 font-semibold">ขอบคุณที่แจ้งข้อมูล</p>
+              <p className="text-[11px] text-gray-400">admin จะตรวจสอบและอัปเดตตำแหน่งให้</p>
+            </div>
           )}
         </div>
       </div>
