@@ -108,7 +108,7 @@ export default function MapPage() {
           <span className="text-[10px] text-gray-400">ลำพูน</span>
         </div>
         <div className="text-[10px] text-gray-400">
-          ข้อมูลจาก FuelRadar {sourceTime && <span>· {sourceTime}</span>}
+          ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span>· {sourceTime}</span>}
         </div>
       </div>
 

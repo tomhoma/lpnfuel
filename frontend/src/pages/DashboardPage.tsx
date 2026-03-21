@@ -17,7 +17,7 @@ export default function DashboardPage() {
         <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 px-3 py-1">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
-            <div className="text-[10px] text-gray-400">ข้อมูลจาก FuelRadar</div>
+            <div className="text-[10px] text-gray-400">ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a></div>
           </div>
         </header>
         <div className="flex items-center justify-center h-[80vh]">
@@ -45,7 +45,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
           <div className="text-[10px] text-gray-400">
-            ข้อมูลจาก FuelRadar {sourceTime && <span>· {sourceTime}</span>}
+            ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span>· {sourceTime}</span>}
           </div>
         </div>
       </header>
