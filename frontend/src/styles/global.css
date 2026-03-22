@@ -95,14 +95,16 @@ body {
   border-radius: 4px;
 }
 
-/* Ticker animation */
+/* Ticker animation — GPU-accelerated seamless loop */
 @keyframes ticker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .animate-ticker {
   animation: ticker 6s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 /* Scrollbar hide for filter pills */

@@ -31,18 +31,18 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
     return { ...f, text: `${f.label} ${f.count}`, alert: false }
   })
 
-  const TickerContent = () => (
-    <span className="flex items-center gap-4 text-[11px] pr-10">
-      {tickerItems.map(item => (
-        <span key={item.key} className="flex items-center gap-1">
-          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.dot}`} />
-          <span className={`font-medium ${item.alert ? 'text-red-400' : 'text-gray-300'}`}>
-            {item.text}
-          </span>
+  const separator = <span className="text-gray-600 mx-1">·</span>
+
+  const renderItems = () =>
+    tickerItems.map((item, i) => (
+      <span key={item.key} className="inline-flex items-center gap-1">
+        {i > 0 && separator}
+        <span className={`inline-block w-2 h-2 rounded-full ${item.dot}`} />
+        <span className={`font-medium ${item.alert ? 'text-red-400' : 'text-gray-300'}`}>
+          {item.text}
         </span>
-      ))}
-    </span>
-  )
+      </span>
+    ))
 
   return (
     <Link
@@ -50,9 +50,13 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
       className="absolute bottom-16 left-3 right-14 z-[500] block active:scale-[0.98] transition-transform"
     >
       <div className="bg-gray-900/80 backdrop-blur-md rounded-full px-3 py-1.5 shadow-lg overflow-hidden">
-        <div className="flex whitespace-nowrap animate-ticker">
-          <TickerContent />
-          <TickerContent />
+        <div className="inline-flex whitespace-nowrap animate-ticker will-change-transform">
+          <span className="inline-flex items-center text-[11px] pr-8">
+            {renderItems()}
+          </span>
+          <span className="inline-flex items-center text-[11px] pr-8" aria-hidden="true">
+            {renderItems()}
+          </span>
         </div>
       </div>
     </Link>
