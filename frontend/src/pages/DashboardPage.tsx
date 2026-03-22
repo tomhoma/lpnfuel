@@ -131,7 +131,7 @@ export default function DashboardPage() {
       {/* Floating map button — cow mascot, top right */}
       <Link
         to="/"
-        className="fixed top-2 right-3 z-50 active:scale-90 transition drop-shadow-lg"
+        className="fixed top-12 right-3 z-50 active:scale-90 transition drop-shadow-lg"
         title="กลับแผนที่"
       >
         <img src="/cowMap.png" alt="กลับแผนที่" className="w-20 h-20" />

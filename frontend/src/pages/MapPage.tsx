@@ -126,7 +126,7 @@ export default function MapPage() {
       {/* App header */}
       <div className="bg-white/95 backdrop-blur-sm flex items-center justify-between px-3 pt-[env(safe-area-inset-top)] border-b border-gray-50">
         <div className="flex items-center gap-2 py-1">
-          <span className="text-base font-bold text-gray-800">รายงานสถานการณ์น้ำมันจังหวัดลำพูน</span>
+          <span className="text-base font-bold text-gray-800">ค้นหาน้ำมันในลำพูน</span>
         </div>
         <div className="text-xs text-gray-400">
           ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span className="inline-flex items-center gap-1"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{sourceTime}</span>}
