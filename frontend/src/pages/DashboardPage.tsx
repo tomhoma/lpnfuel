@@ -139,7 +139,7 @@ export default function DashboardPage() {
         className="fixed top-[7.5rem] right-3 z-50 active:scale-90 transition drop-shadow-lg"
         title="กลับแผนที่"
       >
-        <img src="/cowMap.png" alt="กลับแผนที่" className="w-20 h-20" />
+        <img src="/cowMap.png" alt="กลับแผนที่" className="w-[7.5rem] h-[7.5rem]" />
       </Link>
     </div>
   )

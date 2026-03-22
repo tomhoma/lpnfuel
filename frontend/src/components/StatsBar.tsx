@@ -22,38 +22,63 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
     })
   }, [stations])
 
-  const alerts = fuelCounts.filter(f => f.count === 0)
+  const total = stations.length
 
   return (
     <Link
       to="/dashboard"
-      className="absolute bottom-16 left-3 z-[500] bg-white/90 backdrop-blur-sm shadow-lg rounded-xl px-4 py-3 border border-gray-200/50 block active:scale-95 transition"
+      className="absolute bottom-16 left-3 right-14 z-[500] bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-4 py-3 border border-gray-200/60 block active:scale-[0.97] transition-transform"
     >
-      <div className="flex items-center gap-2 text-sm">
-        <span className="inline-block w-3 h-3 rounded-full bg-green-500" />
-        <span className="text-gray-600">มีน้ำมัน <b className="text-green-600">{summary.with_fuel}</b></span>
-        <span className="text-gray-300">|</span>
-        <span className="inline-block w-3 h-3 rounded-full bg-red-500" />
-        <span className="text-gray-600">หมด <b className="text-red-600">{summary.all_empty}</b></span>
-        <span className="text-gray-300">|</span>
-        <span className="text-gray-500">{summary.total} ปั๊ม</span>
-      </div>
-      {fuelCounts.map(f => {
-        if (f.count === 0) return null // แสดงใน alerts แทน
-        const total = stations.length
-        const isCrisis = f.count > 0 && f.count <= Math.ceil(total * 0.2)
-        if (!isCrisis) return null
-        return (
-          <div key={f.key} className="text-red-600 font-semibold text-xs mt-1">
-            {f.label}เหลือ {f.count} ปั๊ม
-          </div>
-        )
-      })}
-      {alerts.map(f => (
-        <div key={f.key} className="text-orange-500 font-semibold text-xs mt-1">
-          ไม่มี{f.label} รอน้ำมันจัดส่ง
+      {/* Top row: availability pills + total */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+          <span className="text-xs font-bold text-green-700">{summary.with_fuel}</span>
+          <span className="text-[10px] text-green-600">มี</span>
         </div>
-      ))}
+        <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+          <span className="text-xs font-bold text-red-700">{summary.all_empty}</span>
+          <span className="text-[10px] text-red-600">หมด</span>
+        </div>
+        <span className="ml-auto text-[11px] text-gray-400 font-medium">{summary.total} ปั๊ม</span>
+      </div>
+
+      {/* Fuel type chips */}
+      <div className="flex gap-1.5 mt-2.5">
+        {fuelCounts.map(f => {
+          const isEmpty = f.count === 0
+          const isCrisis = !isEmpty && f.count <= Math.ceil(total * 0.2)
+
+          let chipBg = 'bg-green-50 border-green-200'
+          let countColor = 'text-green-700'
+          let labelColor = 'text-green-600'
+
+          if (isEmpty) {
+            chipBg = 'bg-orange-50 border-orange-200'
+            countColor = 'text-orange-600'
+            labelColor = 'text-orange-500'
+          } else if (isCrisis) {
+            chipBg = 'bg-red-50 border-red-200'
+            countColor = 'text-red-700'
+            labelColor = 'text-red-500'
+          }
+
+          return (
+            <div
+              key={f.key}
+              className={`flex-1 flex flex-col items-center rounded-lg border py-1.5 ${chipBg}`}
+            >
+              <span className={`text-sm font-bold leading-none ${countColor}`}>
+                {isEmpty ? '—' : f.count}
+              </span>
+              <span className={`text-[10px] mt-0.5 font-medium ${labelColor}`}>
+                {f.label}
+              </span>
+            </div>
+          )
+        })}
+      </div>
     </Link>
   )
 }

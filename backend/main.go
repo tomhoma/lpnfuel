@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+	log.SetOutput(os.Stdout)
 	cfg := config.Load()
 
 	if err := db.Connect(cfg.DatabaseURL); err != nil {

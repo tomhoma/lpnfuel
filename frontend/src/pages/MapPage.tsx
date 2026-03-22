@@ -175,7 +175,7 @@ export default function MapPage() {
             className="active:scale-90 transition drop-shadow-lg block"
             title="ภาพรวม"
           >
-            <img src="/cowDash.png" alt="ภาพรวม" className="w-20 h-20" />
+            <img src="/cowDash.png" alt="ภาพรวม" className="w-[7.5rem] h-[7.5rem]" />
           </Link>
         </div>
 
