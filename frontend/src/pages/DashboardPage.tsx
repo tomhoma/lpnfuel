@@ -62,7 +62,9 @@ export default function DashboardPage() {
 
           {overall.diesel_crisis && (
             <div className="mt-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700 font-medium">
-              วิกฤตดีเซล — มีเพียง {overall.diesel_count}/{overall.total} ปั๊ม
+              {overall.diesel_count === 0
+                ? `วิกฤตดีเซล — ไม่มีปั๊มใดมีดีเซลเลย (0/${overall.total} ปั๊ม)`
+                : `วิกฤตดีเซล — เหลือเพียง ${overall.diesel_count}/${overall.total} ปั๊ม`}
             </div>
           )}
         </div>
@@ -70,7 +72,10 @@ export default function DashboardPage() {
         {/* District breakdown */}
         {by_district?.length > 0 && (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-bold mb-3">รายอำเภอ</h3>
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="text-sm font-bold">รายอำเภอ</h3>
+              <span className="text-xs text-gray-400">จำนวนปั๊มที่ยังมีน้ำมัน</span>
+            </div>
             <div className="space-y-2">
               {by_district.map(d => {
                 const pct = d.total_stations > 0
@@ -131,7 +136,7 @@ export default function DashboardPage() {
       {/* Floating map button — cow mascot, top right */}
       <Link
         to="/"
-        className="fixed top-12 right-3 z-50 active:scale-90 transition drop-shadow-lg"
+        className="fixed top-[7.5rem] right-3 z-50 active:scale-90 transition drop-shadow-lg"
         title="กลับแผนที่"
       >
         <img src="/cowMap.png" alt="กลับแผนที่" className="w-20 h-20" />
