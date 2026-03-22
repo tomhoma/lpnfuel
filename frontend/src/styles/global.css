@@ -102,11 +102,7 @@ body {
 }
 
 .animate-ticker {
-  animation: ticker 12s linear infinite;
-}
-
-.animate-ticker-slow {
-  animation: ticker 18s linear infinite;
+  animation: ticker 6s linear infinite;
 }
 
 /* Scrollbar hide for filter pills */
