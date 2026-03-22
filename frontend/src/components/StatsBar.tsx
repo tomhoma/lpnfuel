@@ -24,60 +24,75 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
 
   const total = stations.length
 
+  // Build ticker text parts
+  const tickerParts = fuelCounts
+    .map(f => {
+      if (f.count === 0) return `${f.label} หมด`
+      const isCrisis = f.count <= Math.ceil(total * 0.2)
+      if (isCrisis) return `${f.label} เหลือ ${f.count} ปั๊ม`
+      return `${f.label} ${f.count} ปั๊ม`
+    })
+
+  const hasAlert = fuelCounts.some(f => f.count === 0 || f.count <= Math.ceil(total * 0.2))
+
   return (
     <Link
       to="/dashboard"
-      className="absolute bottom-16 left-3 right-14 z-[500] bg-white/95 backdrop-blur-md shadow-xl rounded-2xl px-4 py-3 border border-gray-200/60 block active:scale-[0.97] transition-transform"
+      className="absolute bottom-16 left-3 right-14 z-[500] block active:scale-[0.98] transition-transform"
     >
-      {/* Top row: availability pills + total */}
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-          <span className="text-xs font-bold text-green-700">{summary.with_fuel}</span>
-          <span className="text-[10px] text-green-600">มี</span>
+      {/* Slim ticker bar */}
+      <div className="bg-gray-900/80 backdrop-blur-md rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg">
+        {/* Static summary */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="w-2 h-2 rounded-full bg-green-400" />
+          <span className="text-xs font-bold text-green-400">{summary.with_fuel}</span>
+          <span className="text-gray-500 text-[10px]">/</span>
+          <span className="w-2 h-2 rounded-full bg-red-400" />
+          <span className="text-xs font-bold text-red-400">{summary.all_empty}</span>
         </div>
-        <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded-full px-3 py-1">
-          <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-          <span className="text-xs font-bold text-red-700">{summary.all_empty}</span>
-          <span className="text-[10px] text-red-600">หมด</span>
+
+        <span className="text-gray-600">|</span>
+
+        {/* Scrolling ticker */}
+        <div className="overflow-hidden flex-1 min-w-0">
+          <div className={`flex whitespace-nowrap ${hasAlert ? 'animate-ticker' : 'animate-ticker-slow'}`}>
+            <span className="flex items-center gap-3 text-[11px] pr-8">
+              {tickerParts.map((text, i) => {
+                const f = fuelCounts[i]
+                const isEmpty = f.count === 0
+                const isCrisis = !isEmpty && f.count <= Math.ceil(total * 0.2)
+                let color = 'text-gray-300'
+                if (isEmpty) color = 'text-orange-400'
+                else if (isCrisis) color = 'text-red-400'
+
+                return (
+                  <span key={f.key} className={`${color} font-medium`}>
+                    {isEmpty ? '⚠ ' : ''}{text}
+                  </span>
+                )
+              })}
+              <span className="text-gray-500 text-[10px]">{summary.total} ปั๊ม</span>
+            </span>
+            {/* Duplicate for seamless loop */}
+            <span className="flex items-center gap-3 text-[11px] pr-8" aria-hidden>
+              {tickerParts.map((text, i) => {
+                const f = fuelCounts[i]
+                const isEmpty = f.count === 0
+                const isCrisis = !isEmpty && f.count <= Math.ceil(total * 0.2)
+                let color = 'text-gray-300'
+                if (isEmpty) color = 'text-orange-400'
+                else if (isCrisis) color = 'text-red-400'
+
+                return (
+                  <span key={f.key} className={`${color} font-medium`}>
+                    {isEmpty ? '⚠ ' : ''}{text}
+                  </span>
+                )
+              })}
+              <span className="text-gray-500 text-[10px]">{summary.total} ปั๊ม</span>
+            </span>
+          </div>
         </div>
-        <span className="ml-auto text-[11px] text-gray-400 font-medium">{summary.total} ปั๊ม</span>
-      </div>
-
-      {/* Fuel type chips */}
-      <div className="flex gap-1.5 mt-2.5">
-        {fuelCounts.map(f => {
-          const isEmpty = f.count === 0
-          const isCrisis = !isEmpty && f.count <= Math.ceil(total * 0.2)
-
-          let chipBg = 'bg-green-50 border-green-200'
-          let countColor = 'text-green-700'
-          let labelColor = 'text-green-600'
-
-          if (isEmpty) {
-            chipBg = 'bg-orange-50 border-orange-200'
-            countColor = 'text-orange-600'
-            labelColor = 'text-orange-500'
-          } else if (isCrisis) {
-            chipBg = 'bg-red-50 border-red-200'
-            countColor = 'text-red-700'
-            labelColor = 'text-red-500'
-          }
-
-          return (
-            <div
-              key={f.key}
-              className={`flex-1 flex flex-col items-center rounded-lg border py-1.5 ${chipBg}`}
-            >
-              <span className={`text-sm font-bold leading-none ${countColor}`}>
-                {isEmpty ? '—' : f.count}
-              </span>
-              <span className={`text-[10px] mt-0.5 font-medium ${labelColor}`}>
-                {f.label}
-              </span>
-            </div>
-          )
-        })}
       </div>
     </Link>
   )

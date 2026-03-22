@@ -95,6 +95,20 @@ body {
   border-radius: 4px;
 }
 
+/* Ticker animation */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker {
+  animation: ticker 12s linear infinite;
+}
+
+.animate-ticker-slow {
+  animation: ticker 18s linear infinite;
+}
+
 /* Scrollbar hide for filter pills */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
