@@ -126,7 +126,6 @@ export default function MapPage() {
       {/* App header */}
       <div className="bg-white/95 backdrop-blur-sm flex items-center justify-between px-3 pt-[env(safe-area-inset-top)] border-b border-gray-50">
         <div className="flex items-center gap-2 py-1">
-          <img src="/logo.png" alt="" className="w-8 h-8 rounded-full" />
           <span className="text-base font-bold text-gray-800">รายงานสถานการณ์น้ำมันจังหวัดลำพูน</span>
         </div>
         <div className="text-xs text-gray-400">
@@ -169,9 +168,19 @@ export default function MapPage() {
         {/* Floating stats overlay */}
         <StatsBar summary={summary} stations={data?.stations || []} />
 
-        {/* Right-side floating buttons */}
-        <div className="absolute bottom-14 right-3 z-[500] flex flex-col gap-2">
-          {/* Locate me */}
+        {/* Dashboard cow — top right, same level as fuel selector */}
+        <div className="absolute top-3 right-3 z-[500]">
+          <Link
+            to="/dashboard"
+            className="active:scale-90 transition drop-shadow-lg block"
+            title="ภาพรวม"
+          >
+            <img src="/cowDash.png" alt="ภาพรวม" className="w-20 h-20" />
+          </Link>
+        </div>
+
+        {/* Locate me — bottom right */}
+        <div className="absolute bottom-16 right-3 z-[500]">
           <button
             onClick={geo.request}
             className="bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
@@ -182,14 +191,6 @@ export default function MapPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v2m0 16v2M2 12h2m16 0h2" />
             </svg>
           </button>
-          {/* Dashboard - cow mascot */}
-          <Link
-            to="/dashboard"
-            className="active:scale-90 transition drop-shadow-lg"
-            title="ภาพรวม"
-          >
-            <img src="/cowDash.png" alt="ภาพรวม" className="w-16 h-16" />
-          </Link>
         </div>
       </div>
 

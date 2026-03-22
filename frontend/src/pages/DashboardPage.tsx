@@ -35,10 +35,7 @@ export default function DashboardPage() {
       {/* Header — same layout as MapPage */}
       <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 sticky top-0 z-10 px-3 py-1">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="" className="w-8 h-8 rounded-full" />
-            <span className="text-base font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
-          </div>
+          <span className="text-base font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
           <div className="text-[10px] text-gray-400">
             ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span className="inline-flex items-center gap-1"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{sourceTime}</span>}
           </div>
@@ -101,22 +98,8 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Brand breakdown */}
-        {by_brand?.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h3 className="text-sm font-bold mb-3">รายแบรนด์</h3>
-            <div className="space-y-2">
-              {by_brand.map(b => (
-                <div key={b.brand} className="flex items-center gap-3">
-                  <span className="text-sm flex-1">{b.brand}</span>
-                  <span className="text-xs tabular-nums text-gray-500">
-                    {b.with_fuel}/{b.total} ({b.available_rate.toFixed(0)}%)
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Trend chart — moved up */}
+        {data.trend_7d && <TrendChart data={data.trend_7d} />}
 
         {/* Incoming supply */}
         {incoming_supply?.length > 0 && (
@@ -141,20 +124,17 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Trend chart */}
-        {data.trend_7d && <TrendChart data={data.trend_7d} />}
-
         {/* Feedback */}
         <FeedbackCard />
       </div>
 
-      {/* Floating map button — cow mascot */}
+      {/* Floating map button — cow mascot, top right */}
       <Link
         to="/"
-        className="fixed bottom-6 right-4 z-50 active:scale-90 transition drop-shadow-lg"
+        className="fixed top-2 right-3 z-50 active:scale-90 transition drop-shadow-lg"
         title="กลับแผนที่"
       >
-        <img src="/cowMap.png" alt="กลับแผนที่" className="w-16 h-16" />
+        <img src="/cowMap.png" alt="กลับแผนที่" className="w-20 h-20" />
       </Link>
     </div>
   )

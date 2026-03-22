@@ -54,9 +54,6 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
           ไม่มี{f.label} รอน้ำมันจัดส่ง
         </div>
       ))}
-      <div className="text-xs text-blue-500 font-medium mt-1.5 flex items-center gap-0.5">
-        กดดูภาพรวม →
-      </div>
     </Link>
   )
 }
