@@ -16,8 +16,8 @@ export default function TransportBadge({ status, eta }: TransportBadgeProps) {
     <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${config.bg} ${config.border}`}>
       <span>{config.icon}</span>
       <div>
-        <div className={`text-sm font-semibold ${config.text}`}>{status}</div>
-        {eta && <div className="text-xs text-gray-500">{eta}</div>}
+        <div className={`text-base font-semibold ${config.text}`}>{status}</div>
+        {eta && <div className="text-sm text-gray-500">{eta}</div>}
       </div>
     </div>
   )

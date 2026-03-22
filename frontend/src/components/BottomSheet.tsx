@@ -97,17 +97,17 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
                   {station.brand}
                 </span>
                 {station.distance_km != null && (
-                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
                     {formatDistance(station.distance_km)}
                   </span>
                 )}
               </div>
-              <h2 className="text-base font-bold leading-snug mt-1">{station.name}</h2>
-              <span className="text-xs text-gray-400">{station.district}</span>
+              <h2 className="text-lg font-bold leading-snug mt-1">{station.name}</h2>
+              <span className="text-sm text-gray-400">{station.district}</span>
             </div>
             <button
               onClick={onClose}
@@ -135,7 +135,7 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
 
           {/* Updated at */}
           {station.source_updated && (
-            <p className="text-[10px] text-gray-400">
+            <p className="text-xs text-gray-400">
               อัปเดต: {new Date(station.source_updated).toLocaleString('th-TH', {
                 day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
               })}
@@ -162,7 +162,7 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
           {!showGeoReport && !geoSent && (
             <button
               onClick={() => setShowGeoReport(true)}
-              className="w-full text-center text-[11px] text-gray-400 hover:text-red-500 transition py-1"
+              className="w-full text-center text-xs text-gray-400 hover:text-red-500 transition py-1"
             >
               แจ้งตำแหน่งบนแผนที่ไม่ถูกต้อง
             </button>
@@ -209,7 +209,7 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
           {geoSent && (
             <div className="text-center py-2">
               <p className="text-sm text-green-600 font-semibold">ขอบคุณที่แจ้งข้อมูล</p>
-              <p className="text-[11px] text-gray-400">admin จะตรวจสอบและอัปเดตตำแหน่งให้</p>
+              <p className="text-xs text-gray-400">admin จะตรวจสอบและอัปเดตตำแหน่งให้</p>
             </div>
           )}
         </div>

@@ -33,7 +33,7 @@ export default function FilterBar({ status, brand, onStatus, onBrand, stationCou
           <button
             key={s.value}
             onClick={() => onStatus(s.value)}
-            className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95
+            className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-all active:scale-95
               ${status === s.value
                 ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
                 : 'bg-white border-gray-200 text-gray-600'
@@ -50,7 +50,7 @@ export default function FilterBar({ status, brand, onStatus, onBrand, stationCou
         <select
           value={brand}
           onChange={e => onBrand(e.target.value as BrandFilter)}
-          className="flex-shrink-0 text-xs font-medium border border-gray-200 rounded-full px-2.5 py-1 bg-white text-gray-600 appearance-none pr-6 bg-no-repeat bg-[right_6px_center] bg-[length:12px]"
+          className="flex-shrink-0 text-sm font-medium border border-gray-200 rounded-full px-3 py-1.5 bg-white text-gray-600 appearance-none pr-7 bg-no-repeat bg-[right_8px_center] bg-[length:14px]"
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239CA3AF'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E")` }}
         >
           {BRAND_OPTIONS.map(b => (
@@ -59,7 +59,7 @@ export default function FilterBar({ status, brand, onStatus, onBrand, stationCou
         </select>
 
         {/* Count */}
-        <span className="text-[10px] text-gray-400 ml-auto flex-shrink-0 tabular-nums">
+        <span className="text-sm text-gray-400 ml-auto flex-shrink-0 tabular-nums">
           {stationCount} ปั๊ม
         </span>
       </div>

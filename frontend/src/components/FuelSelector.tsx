@@ -19,7 +19,7 @@ export default function FuelSelector({ selected, onSelect }: FuelSelectorProps) 
         <button
           key={f.value}
           onClick={() => onSelect(selected === f.value ? null : f.value)}
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-[11px] font-bold border-2 shadow-lg active:scale-90 transition-all
+          className={`w-14 h-14 rounded-full flex items-center justify-center text-sm font-bold border-2 shadow-lg active:scale-90 transition-all
             ${selected === f.value ? f.activeColor : f.color}`}
         >
           {f.label}

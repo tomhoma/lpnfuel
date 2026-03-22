@@ -27,13 +27,13 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
   return (
     <Link
       to="/dashboard"
-      className="absolute bottom-14 left-3 z-[500] bg-white/90 backdrop-blur-sm shadow-lg rounded-xl px-3 py-2 border border-gray-200/50 block active:scale-95 transition"
+      className="absolute bottom-16 left-3 z-[500] bg-white/90 backdrop-blur-sm shadow-lg rounded-xl px-4 py-3 border border-gray-200/50 block active:scale-95 transition"
     >
-      <div className="flex items-center gap-1.5 text-xs">
-        <span className="inline-block w-2 h-2 rounded-full bg-green-500" />
+      <div className="flex items-center gap-2 text-sm">
+        <span className="inline-block w-3 h-3 rounded-full bg-green-500" />
         <span className="text-gray-600">มีน้ำมัน <b className="text-green-600">{summary.with_fuel}</b></span>
         <span className="text-gray-300">|</span>
-        <span className="inline-block w-2 h-2 rounded-full bg-red-500" />
+        <span className="inline-block w-3 h-3 rounded-full bg-red-500" />
         <span className="text-gray-600">หมด <b className="text-red-600">{summary.all_empty}</b></span>
         <span className="text-gray-300">|</span>
         <span className="text-gray-500">{summary.total} ปั๊ม</span>
@@ -44,16 +44,19 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
         const isCrisis = f.count > 0 && f.count <= Math.ceil(total * 0.2)
         if (!isCrisis) return null
         return (
-          <div key={f.key} className="text-red-600 font-semibold text-[10px] mt-0.5">
+          <div key={f.key} className="text-red-600 font-semibold text-xs mt-1">
             {f.label}เหลือ {f.count} ปั๊ม
           </div>
         )
       })}
       {alerts.map(f => (
-        <div key={f.key} className="text-orange-500 font-semibold text-[10px] mt-0.5">
+        <div key={f.key} className="text-orange-500 font-semibold text-xs mt-1">
           ไม่มี{f.label} รอน้ำมันจัดส่ง
         </div>
       ))}
+      <div className="text-xs text-blue-500 font-medium mt-1.5 flex items-center gap-0.5">
+        กดดูภาพรวม →
+      </div>
     </Link>
   )
 }
