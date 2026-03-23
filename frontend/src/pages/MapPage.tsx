@@ -123,7 +123,7 @@ export default function MapPage() {
     : null
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-dvh flex flex-col">
       {/* App header */}
       <div className="bg-white/95 backdrop-blur-sm flex items-center justify-between px-3 pt-[env(safe-area-inset-top)] border-b border-gray-50">
         <div className="flex items-center gap-2 py-1">

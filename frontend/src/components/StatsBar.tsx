@@ -59,7 +59,8 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
   return (
     <Link
       to="/dashboard"
-      className="absolute bottom-4 left-3 right-3 z-[500] block active:scale-[0.98] transition-transform"
+      className="absolute left-3 right-3 z-[500] block active:scale-[0.98] transition-transform"
+      style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="bg-gray-900/80 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-lg overflow-hidden">
         <div className="inline-flex whitespace-nowrap animate-ticker will-change-transform">
