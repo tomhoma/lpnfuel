@@ -15,7 +15,7 @@ export default {
         'text-secondary': '#6B7280',
       },
       fontFamily: {
-        sans: ['Sarabun', 'sans-serif'],
+        sans: ['IBM Plex Sans Thai', 'sans-serif'],
       },
       borderRadius: {
         card: '12px',
