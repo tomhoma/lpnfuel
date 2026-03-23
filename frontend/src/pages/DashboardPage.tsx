@@ -2,7 +2,6 @@ import { useDashboard, usePrices } from '../hooks/useStations'
 import TrendChart from '../components/TrendChart'
 import PriceCard from '../components/PriceCard'
 import FeedbackCard from '../components/FeedbackCard'
-import SurveyCard from '../components/SurveyCard'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
@@ -165,9 +164,6 @@ export default function DashboardPage() {
 
         {/* Fuel prices — bottom section */}
         <PriceCard prices={prices} />
-
-        {/* Survey — crowd report interest */}
-        <SurveyCard />
 
         {/* Feedback */}
         <FeedbackCard />
