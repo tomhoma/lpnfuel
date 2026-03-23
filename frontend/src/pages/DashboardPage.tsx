@@ -32,9 +32,9 @@ export default function DashboardPage() {
   const pct = overall.total > 0 ? Math.round(overall.with_fuel / overall.total * 100) : 0
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-dvh bg-gray-50" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header — same layout as MapPage */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 sticky top-0 z-10 px-3 py-1">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-50 sticky top-0 z-10 px-3 py-1 pt-[env(safe-area-inset-top)]">
         <div className="flex items-center justify-between">
           <span className="text-base font-bold text-gray-800">ภาพรวมน้ำมันจังหวัดลำพูน</span>
           <div className="text-[10px] text-gray-400">
@@ -169,13 +169,16 @@ export default function DashboardPage() {
         <FeedbackCard />
       </div>
 
-      {/* Floating map button — cow mascot, top right */}
+      {/* Floating map button */}
       <Link
         to="/"
-        className="fixed top-[7.5rem] right-3 z-50 active:scale-90 transition drop-shadow-lg"
+        className="fixed bottom-6 right-4 z-50 bg-blue-600 text-white shadow-lg rounded-full w-12 h-12 flex items-center justify-center active:scale-90 transition"
+        style={{ bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}
         title="กลับแผนที่"
       >
-        <img src="/cowMap.png" alt="กลับแผนที่" className="w-[7.5rem] h-[7.5rem]" />
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
       </Link>
     </div>
   )

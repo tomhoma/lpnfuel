@@ -89,7 +89,7 @@ export default function MapPage() {
 
   if (loading || !splashDone) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
+      <div className="h-dvh flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
         <div className="text-center animate-fadeIn">
           <img src="/logo.png" alt="LPN Fuel" className="w-48 mx-auto mb-6 drop-shadow-xl object-contain" />
           <div className="w-6 h-6 border-3 border-green-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -101,7 +101,7 @@ export default function MapPage() {
 
   if (error) {
     return (
-      <div className="h-screen flex items-center justify-center p-4">
+      <div className="h-dvh flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-red-500 font-semibold mb-2">โหลดข้อมูลไม่ได้</p>
           <p className="text-sm text-gray-500 mb-4">{error}</p>
@@ -145,7 +145,7 @@ export default function MapPage() {
       {districtFilter && (
         <div className="bg-blue-50 border-b border-blue-100 px-3 py-1 flex items-center justify-between">
           <span className="text-sm text-blue-700">อ.{districtFilter}</span>
-          <button onClick={() => setDistrictFilter(null)} className="text-sm text-blue-500 active:scale-95">
+          <button onClick={() => setDistrictFilter(null)} className="text-sm text-blue-500 active:scale-95 min-h-[44px] flex items-center">
             ดูทั้งหมด &times;
           </button>
         </div>

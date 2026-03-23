@@ -93,6 +93,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
       <div
         ref={sheetRef}
         className="bottom-sheet bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[55vh] overflow-y-auto animate-slideUp"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {/* Handle bar */}
         <div className="flex justify-center pt-2 pb-0.5 sticky top-0 bg-white rounded-t-2xl">
@@ -114,7 +115,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
             </div>
             <button
               onClick={onClose}
-              className="p-1 -mr-1 text-gray-300 hover:text-gray-500 active:scale-90 transition"
+              className="p-2 -mr-2 text-gray-300 hover:text-gray-500 active:scale-90 transition"
               aria-label="ปิด"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
