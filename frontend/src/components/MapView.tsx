@@ -84,19 +84,44 @@ function UserLocationMarker({ lat, lng }: { lat: number; lng: number }) {
   )
 }
 
-function FlyToUser({ lat, lng }: { lat: number; lng: number }) {
+const MIN_VISIBLE = 3
+
+/** หา bounds ที่ครอบอย่างน้อย N ปั๊มที่ใกล้ center มากสุด + รวม center ด้วย */
+function boundsAroundCenter(center: L.LatLng, points: StationWithStatus[], n: number, fitOpts: L.FitBoundsOptions) {
+  const sorted = [...points].sort((a, b) =>
+    center.distanceTo(L.latLng(a.lat!, a.lng!)) - center.distanceTo(L.latLng(b.lat!, b.lng!))
+  )
+  const nearest = sorted.slice(0, Math.min(n, sorted.length))
+  const latlngs: L.LatLng[] = nearest.map(s => L.latLng(s.lat!, s.lng!))
+  latlngs.push(center) // รวม user/center ไว้ใน bounds ด้วย
+  return L.latLngBounds(latlngs)
+}
+
+function FlyToUser({ lat, lng, stations }: { lat: number; lng: number; stations: StationWithStatus[] }) {
   const map = useMap()
   const [hasMoved, setHasMoved] = useState(false)
   useEffect(() => {
-    if (!hasMoved) {
-      map.flyTo([lat, lng], 13, { duration: 1 })
-      setHasMoved(true)
+    if (hasMoved) return
+    const userLatLng = L.latLng(lat, lng)
+    const points = stations.filter(s => s.lat != null && s.lng != null)
+    const fitOpts = {
+      paddingTopLeft: [80, 20] as [number, number],
+      paddingBottomRight: [20, 100] as [number, number],
     }
-  }, [map, lat, lng, hasMoved])
+
+    if (points.length >= MIN_VISIBLE) {
+      // Zoom เข้าหา user location + ให้เห็นอย่างน้อย 3 ปั๊ม
+      const nearBounds = boundsAroundCenter(userLatLng, points, MIN_VISIBLE, fitOpts)
+      map.flyToBounds(nearBounds, { ...fitOpts, maxZoom: 14, duration: 1 })
+    } else {
+      map.flyTo([lat, lng], 13, { duration: 1 })
+    }
+    setHasMoved(true)
+  }, [map, lat, lng, hasMoved, stations])
   return null
 }
 
-function FitBounds({ stations }: { stations: StationWithStatus[] }) {
+function FitBounds({ stations, userLat, userLng }: { stations: StationWithStatus[]; userLat?: number | null; userLng?: number | null }) {
   const map = useMap()
   const prevCount = useRef(stations.length)
   const hasInitialFit = useRef(false)
@@ -106,14 +131,12 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     if (points.length === 0) return
 
     const bounds = L.latLngBounds(points.map(s => L.latLng(s.lat!, s.lng!)))
-    // paddingTopLeft: [left, top], paddingBottomRight: [right, bottom]
     const fitOpts = {
-      paddingTopLeft: [80, 20] as [number, number],    // ซ้ายเผื่อปุ่มน้ำมัน
-      paddingBottomRight: [20, 100] as [number, number], // ล่างเผื่อ stats bar
+      paddingTopLeft: [80, 20] as [number, number],
+      paddingBottomRight: [20, 100] as [number, number],
     }
 
     if (!hasInitialFit.current) {
-      // Initial: zoom out ให้เห็นทั้งจังหวัด
       map.fitBounds(bounds, { ...fitOpts, maxZoom: DEFAULT_ZOOM })
       hasInitialFit.current = true
       prevCount.current = stations.length
@@ -121,26 +144,21 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     }
 
     if (stations.length !== prevCount.current) {
-      const MIN_VISIBLE = 3
       const currentBounds = map.getBounds()
       const visibleStations = points.filter(s => currentBounds.contains(L.latLng(s.lat!, s.lng!)))
 
       if (visibleStations.length < MIN_VISIBLE) {
-        // ปั๊มใน view น้อยกว่า 3 → ค่อยๆ zoom out ให้เห็นอย่างน้อย 3 ปั๊ม
-        // หาจุดที่ใกล้ศูนย์กลาง map มากสุด 3 ปั๊ม แล้ว fit bounds
-        const center = map.getCenter()
-        const sorted = [...points].sort((a, b) =>
-          center.distanceTo(L.latLng(a.lat!, a.lng!)) - center.distanceTo(L.latLng(b.lat!, b.lng!))
-        )
-        const nearest = sorted.slice(0, Math.min(MIN_VISIBLE, sorted.length))
-        const nearBounds = L.latLngBounds(nearest.map(s => L.latLng(s.lat!, s.lng!)))
-        map.flyToBounds(nearBounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
+        // ใช้ user location เป็นศูนย์กลาง ถ้ามี, ไม่งั้นใช้ map center
+        const center = (userLat != null && userLng != null)
+          ? L.latLng(userLat, userLng)
+          : map.getCenter()
+        const nearBounds = boundsAroundCenter(center, points, MIN_VISIBLE, fitOpts)
+        map.flyToBounds(nearBounds, { ...fitOpts, maxZoom: 14, duration: 0.5 })
       }
-      // มีปั๊ม >= 3 อยู่แล้ว → ไม่ต้อง zoom ให้ user ดูในมุมเดิม
 
       prevCount.current = stations.length
     }
-  }, [stations, map])
+  }, [stations, map, userLat, userLng])
 
   return null
 }
@@ -240,7 +258,7 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       />
 
       {/* Auto-fit to filtered stations */}
-      <FitBounds stations={stations} />
+      <FitBounds stations={stations} userLat={userLat} userLng={userLng} />
 
       {/* District boundaries */}
       <DistrictOverlay />
@@ -292,7 +310,7 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       {userLat != null && userLng != null && (
         <>
           <UserLocationMarker lat={userLat} lng={userLng} />
-          <FlyToUser lat={userLat} lng={userLng} />
+          <FlyToUser lat={userLat} lng={userLng} stations={stations} />
         </>
       )}
     </MapContainer>
