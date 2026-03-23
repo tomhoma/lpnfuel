@@ -40,18 +40,6 @@ func UpsertFuelStatus(ctx context.Context, fs models.FuelStatus) error {
 	return err
 }
 
-func InsertHistory(ctx context.Context, fs models.FuelStatus) error {
-	_, err := Pool.Exec(ctx, `
-		INSERT INTO fuel_history (station_id, gas95, gas91, e20, diesel, transport_status)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, fs.StationID, fs.Gas95, fs.Gas91, fs.E20, fs.Diesel, fs.TransportStatus)
-	return err
-}
-
-func RefreshDistrictSummary(ctx context.Context) error {
-	_, err := Pool.Exec(ctx, `REFRESH MATERIALIZED VIEW district_summary`)
-	return err
-}
 
 func GetAllStationsWithStatus(ctx context.Context) ([]models.StationWithStatus, error) {
 	rows, err := Pool.Query(ctx, `
@@ -144,32 +132,6 @@ func GetStationWithHistory(ctx context.Context, id string) (*models.StationWithS
 	return &sw, history, nil
 }
 
-func GetDistrictSummaries(ctx context.Context) ([]models.DistrictSummary, error) {
-	rows, err := Pool.Query(ctx, `
-		SELECT district, total_stations, stations_with_fuel, stations_all_empty,
-		       diesel_available, gas91_available, incoming_supply
-		FROM district_summary
-		ORDER BY total_stations DESC
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []models.DistrictSummary
-	for rows.Next() {
-		var ds models.DistrictSummary
-		err := rows.Scan(
-			&ds.District, &ds.TotalStations, &ds.WithFuel, &ds.AllEmpty,
-			&ds.DieselAvailable, &ds.Gas91Available, &ds.IncomingSupply,
-		)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, ds)
-	}
-	return result, nil
-}
 
 func GetLatestPrices(ctx context.Context) (map[string]map[string]map[string]float64, error) {
 	rows, err := Pool.Query(ctx, `
@@ -232,44 +194,6 @@ func GetLastFetchTime(ctx context.Context) time.Time {
 	return t
 }
 
-func GetTrend7d(ctx context.Context) (models.TrendData, error) {
-	rows, err := Pool.Query(ctx, `
-		SELECT
-			DATE_TRUNC('hour', recorded_at) as hour,
-			COUNT(*) as total,
-			COUNT(*) FILTER (WHERE gas95 = 'มี') as gas95_available,
-			COUNT(*) FILTER (WHERE gas91 = 'มี') as gas91_available,
-			COUNT(*) FILTER (WHERE e20 = 'มี') as e20_available,
-			COUNT(*) FILTER (WHERE diesel = 'มี') as diesel_available
-		FROM fuel_history
-		WHERE recorded_at > now() - INTERVAL '7 days'
-		GROUP BY hour
-		ORDER BY hour
-	`)
-	if err != nil {
-		return models.TrendData{}, err
-	}
-	defer rows.Close()
-
-	var trend models.TrendData
-	for rows.Next() {
-		var hour time.Time
-		var total, gas95, gas91, e20, diesel int
-		if err := rows.Scan(&hour, &total, &gas95, &gas91, &e20, &diesel); err != nil {
-			continue
-		}
-		if total == 0 {
-			continue
-		}
-		dateStr := hour.Format("2006-01-02 15:04")
-		pct := func(n int) float64 { return float64(n) / float64(total) * 100 }
-		trend.Gas95 = append(trend.Gas95, models.TrendPoint{Date: dateStr, Percent: pct(gas95)})
-		trend.Gas91 = append(trend.Gas91, models.TrendPoint{Date: dateStr, Percent: pct(gas91)})
-		trend.E20 = append(trend.E20, models.TrendPoint{Date: dateStr, Percent: pct(e20)})
-		trend.Diesel = append(trend.Diesel, models.TrendPoint{Date: dateStr, Percent: pct(diesel)})
-	}
-	return trend, nil
-}
 
 func UpdateStationGeo(ctx context.Context, id string, lat, lng float64) error {
 	_, err := Pool.Exec(ctx, `

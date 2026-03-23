@@ -17,7 +17,6 @@ func NewRouter(corsOrigins []string, apiKey string) http.Handler {
 	mux.HandleFunc("GET /api/v1/stations", handleStations)
 	mux.HandleFunc("GET /api/v1/stations/nearest", handleNearest)
 	mux.HandleFunc("GET /api/v1/stations/{id}", handleStationByID)
-	mux.HandleFunc("GET /api/v1/dashboard", handleDashboard)
 	mux.HandleFunc("GET /api/v1/prices", handlePrices)
 	mux.HandleFunc("POST /api/v1/ingest", handleIngest)
 	mux.HandleFunc("PUT /api/v1/stations/{id}/geo", handleUpdateGeo)

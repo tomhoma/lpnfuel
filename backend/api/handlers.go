@@ -129,62 +129,6 @@ func handleNearest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"stations": candidates})
 }
 
-func handleDashboard(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	stations, err := db.GetAllStationsWithStatus(ctx)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-
-	summary := computeSummary(stations)
-
-	byDistrict, _ := db.GetDistrictSummaries(ctx)
-
-	// Brand summary
-	brandMap := map[string]*models.BrandSummary{}
-	for _, s := range stations {
-		bs := brandMap[s.Brand]
-		if bs == nil {
-			bs = &models.BrandSummary{Brand: s.Brand}
-			brandMap[s.Brand] = bs
-		}
-		bs.Total++
-		if hasFuel(s.FuelStatus) {
-			bs.WithFuel++
-		}
-	}
-	var byBrand []models.BrandSummary
-	for _, bs := range brandMap {
-		if bs.Total > 0 {
-			bs.AvailableRate = float64(bs.WithFuel) / float64(bs.Total) * 100
-		}
-		byBrand = append(byBrand, *bs)
-	}
-	sort.Slice(byBrand, func(i, j int) bool {
-		return byBrand[i].AvailableRate > byBrand[j].AvailableRate
-	})
-
-	// Incoming supply
-	var incoming []models.StationWithStatus
-	for _, s := range stations {
-		if s.TransportStatus == "กำลังจัดส่ง" || s.TransportStatus == "กำลังลงน้ำมัน" {
-			incoming = append(incoming, s)
-		}
-	}
-
-	trend, _ := db.GetTrend7d(ctx)
-
-	writeJSON(w, http.StatusOK, models.DashboardResponse{
-		Overall:        summary,
-		ByDistrict:     byDistrict,
-		ByBrand:        byBrand,
-		IncomingSupply: incoming,
-		Trend7d:        trend,
-		UpdatedAt:      db.GetLastFetchTime(ctx),
-	})
-}
-
 func handlePrices(w http.ResponseWriter, r *http.Request) {
 	prices, err := db.GetLatestPrices(r.Context())
 	if err != nil {
@@ -268,11 +212,8 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		_ = db.InsertHistory(ctx, fs)
 		updated++
 	}
-
-	_ = db.RefreshDistrictSummary(ctx)
 
 	log.Printf("Ingest: %d stations updated", updated)
 	writeJSON(w, http.StatusOK, map[string]any{

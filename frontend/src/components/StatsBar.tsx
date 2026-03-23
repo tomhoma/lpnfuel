@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
 import type { OverallSummary, StationWithStatus, PricesResponse } from '../types'
 import { getCheapestDiesel } from '../hooks/usePriceLookup'
 
@@ -57,9 +56,8 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
   )
 
   return (
-    <Link
-      to="/dashboard"
-      className="absolute left-3 right-3 z-[500] block active:scale-[0.98] transition-transform"
+    <div
+      className="absolute left-3 right-3 z-[500] block"
       style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
     >
       <div className="bg-gray-900/80 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-lg overflow-hidden">
@@ -71,6 +69,6 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
           ))}
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
