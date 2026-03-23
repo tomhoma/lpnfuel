@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import type { OverallSummary, StationWithStatus } from '../types'
+import type { OverallSummary, StationWithStatus, PricesResponse } from '../types'
+import { getCheapestDiesel } from '../hooks/usePriceLookup'
 
 interface StatsBarProps {
   summary: OverallSummary
   stations: StationWithStatus[]
+  prices?: PricesResponse | null
 }
 
 const FUEL_TYPES = [
@@ -14,7 +16,7 @@ const FUEL_TYPES = [
   { key: 'e20' as const, label: 'E20', dot: 'bg-purple-400' },
 ]
 
-export default function StatsBar({ summary, stations }: StatsBarProps) {
+export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
   const fuelCounts = useMemo(() => {
     return FUEL_TYPES.map(({ key, label, dot }) => {
       const count = stations.filter(s => s[key] === 'มี').length
@@ -23,6 +25,7 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
   }, [stations])
 
   const total = stations.length
+  const cheapDiesel = getCheapestDiesel(prices ?? null)
 
   const tickerItems = fuelCounts.map(f => {
     if (f.count === 0) return { ...f, text: `${f.label} หมด`, alert: true }
@@ -33,16 +36,25 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
 
   const separator = <span className="text-gray-600 mx-1">·</span>
 
-  const renderItems = () =>
-    tickerItems.map((item, i) => (
-      <span key={item.key} className="inline-flex items-center gap-1">
-        {i > 0 && separator}
-        <span className={`inline-block w-2.5 h-2.5 rounded-full ${item.dot}`} />
-        <span className={`font-medium ${item.alert ? 'text-red-400' : 'text-gray-300'}`}>
-          {item.text}
+  const renderItems = () => (
+    <>
+      {tickerItems.map((item, i) => (
+        <span key={item.key} className="inline-flex items-center gap-1">
+          {i > 0 && separator}
+          <span className={`inline-block w-2.5 h-2.5 rounded-full ${item.dot}`} />
+          <span className={`font-medium ${item.alert ? 'text-red-400' : 'text-gray-300'}`}>
+            {item.text}
+          </span>
         </span>
-      </span>
-    ))
+      ))}
+      {cheapDiesel && (
+        <span className="inline-flex items-center gap-1">
+          {separator}
+          <span className="text-blue-300 font-medium">⛽ ดีเซล ฿{cheapDiesel.price.toFixed(2)}</span>
+        </span>
+      )}
+    </>
+  )
 
   return (
     <Link

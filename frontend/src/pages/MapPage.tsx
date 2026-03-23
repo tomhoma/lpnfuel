@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
-import { useStations } from '../hooks/useStations'
+import { useStations, usePrices } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { haversine, formatDistance } from '../hooks/useDistance'
 import MapView from '../components/MapView'
@@ -25,6 +25,7 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
 
 export default function MapPage() {
   const { data, loading, error, lastUpdated, dataVersion, justRefreshed } = useStations()
+  const prices = usePrices()
   const geo = useGeolocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -193,7 +194,7 @@ export default function MapPage() {
         <FuelSelector selected={fuelFilter} onSelect={setFuelFilter} />
 
         {/* Floating stats overlay */}
-        <StatsBar summary={summary} stations={data?.stations || []} />
+        <StatsBar summary={summary} stations={data?.stations || []} prices={prices} />
 
         {/* Dashboard cow — top right, same level as fuel selector */}
         <div className="absolute top-3 right-3 z-[500]">
@@ -235,7 +236,7 @@ export default function MapPage() {
       </div>
 
       {/* Bottom sheet */}
-      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} />
+      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} prices={prices} />
     </div>
   )
 }

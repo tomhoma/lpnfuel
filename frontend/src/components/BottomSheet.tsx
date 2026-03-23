@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import type { StationWithStatus } from '../types'
+import type { StationWithStatus, PricesResponse } from '../types'
 import FuelBadge from './FuelBadge'
 import TransportBadge from './TransportBadge'
 import StationHistory from './StationHistory'
 import { formatDistance } from '../hooks/useDistance'
+import { getPrice } from '../hooks/usePriceLookup'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
 interface BottomSheetProps {
   station: StationWithStatus | null
   onClose: () => void
+  prices?: PricesResponse | null
 }
 
-export default function BottomSheet({ station, onClose }: BottomSheetProps) {
+export default function BottomSheet({ station, onClose, prices }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const [showGeoReport, setShowGeoReport] = useState(false)
   const [geoDetail, setGeoDetail] = useState('')
@@ -127,12 +129,12 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
             <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
-          {/* Row 3: fuel dots + transport — all inline */}
+          {/* Row 3: fuel dots + price + transport — all inline */}
           <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
-            <FuelBadge label="ดีเซล" value={station.diesel} />
-            <FuelBadge label="91" value={station.gas91} />
-            <FuelBadge label="95" value={station.gas95} />
-            <FuelBadge label="E20" value={station.e20} />
+            <FuelBadge label="ดีเซล" value={station.diesel} price={getPrice(prices ?? null, station.brand, 'diesel')} />
+            <FuelBadge label="91" value={station.gas91} price={getPrice(prices ?? null, station.brand, 'gas91')} />
+            <FuelBadge label="95" value={station.gas95} price={getPrice(prices ?? null, station.brand, 'gas95')} />
+            <FuelBadge label="E20" value={station.e20} price={getPrice(prices ?? null, station.brand, 'e20')} />
             {station.transport_status && (
               <>
                 <span className="text-gray-200">|</span>
