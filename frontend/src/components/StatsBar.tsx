@@ -37,7 +37,7 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
     tickerItems.map((item, i) => (
       <span key={item.key} className="inline-flex items-center gap-1">
         {i > 0 && separator}
-        <span className={`inline-block w-2 h-2 rounded-full ${item.dot}`} />
+        <span className={`inline-block w-2.5 h-2.5 rounded-full ${item.dot}`} />
         <span className={`font-medium ${item.alert ? 'text-red-400' : 'text-gray-300'}`}>
           {item.text}
         </span>
@@ -49,12 +49,12 @@ export default function StatsBar({ summary, stations }: StatsBarProps) {
       to="/dashboard"
       className="absolute bottom-16 left-3 right-14 z-[500] block active:scale-[0.98] transition-transform"
     >
-      <div className="bg-gray-900/80 backdrop-blur-md rounded-full px-3 py-1.5 shadow-lg overflow-hidden">
+      <div className="bg-gray-900/80 backdrop-blur-md rounded-full px-4 py-2 shadow-lg overflow-hidden">
         <div className="inline-flex whitespace-nowrap animate-ticker will-change-transform">
-          <span className="inline-flex items-center text-[11px] pr-8">
+          <span className="inline-flex items-center text-[15px] pr-8">
             {renderItems()}
           </span>
-          <span className="inline-flex items-center text-[11px] pr-8" aria-hidden="true">
+          <span className="inline-flex items-center text-[15px] pr-8" aria-hidden="true">
             {renderItems()}
           </span>
         </div>

@@ -121,8 +121,16 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     }
 
     if (stations.length !== prevCount.current) {
-      // Filter เปลี่ยน: zoom เข้าหาปั๊มที่เหลือ
-      map.flyToBounds(bounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
+      // Filter เปลี่ยน: เช็คว่ามีปั๊มใน viewport ปัจจุบันไหม
+      const currentBounds = map.getBounds()
+      const visibleStations = points.filter(s => currentBounds.contains(L.latLng(s.lat!, s.lng!)))
+
+      if (visibleStations.length === 0) {
+        // ไม่มีปั๊มใน view ปัจจุบัน → zoom ไปหาปั๊มที่ตรง filter
+        map.flyToBounds(bounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
+      }
+      // มีปั๊มอยู่แล้ว → ไม่ต้อง zoom ให้ user ดูในมุมเดิม
+
       prevCount.current = stations.length
     }
   }, [stations, map])
