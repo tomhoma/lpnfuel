@@ -70,9 +70,6 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Fuel prices */}
-        <PriceCard prices={prices} />
-
         {/* District breakdown */}
         {by_district?.length > 0 && (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -164,6 +161,9 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Fuel prices — bottom section */}
+        <PriceCard prices={prices} />
 
         {/* Feedback */}
         <FeedbackCard />
