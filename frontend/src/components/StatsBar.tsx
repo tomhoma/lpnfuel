@@ -30,8 +30,8 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
   const tickerItems = fuelCounts.map(f => {
     if (f.count === 0) return { ...f, text: `${f.label} หมด`, alert: true }
     const isCrisis = f.count <= Math.ceil(total * 0.2)
-    if (isCrisis) return { ...f, text: `${f.label} เหลือ ${f.count}`, alert: true }
-    return { ...f, text: `${f.label} ${f.count}`, alert: false }
+    if (isCrisis) return { ...f, text: `${f.label} เหลือ ${f.count} ปั๊ม`, alert: true }
+    return { ...f, text: `${f.label} เหลือ ${f.count} ปั๊ม`, alert: false }
   })
 
   const separator = <span className="text-gray-600 mx-1">·</span>
