@@ -129,19 +129,16 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
             <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
-          {/* Row 3: fuel dots + price + transport — all inline */}
-          <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+          {/* Row 3: fuel grid — evenly spaced */}
+          <div className="grid grid-cols-4 gap-1">
             <FuelBadge label="ดีเซล" value={station.diesel} price={getPrice(prices ?? null, station.brand, 'diesel')} />
             <FuelBadge label="91" value={station.gas91} price={getPrice(prices ?? null, station.brand, 'gas91')} />
             <FuelBadge label="95" value={station.gas95} price={getPrice(prices ?? null, station.brand, 'gas95')} />
             <FuelBadge label="E20" value={station.e20} price={getPrice(prices ?? null, station.brand, 'e20')} />
-            {station.transport_status && (
-              <>
-                <span className="text-gray-200">|</span>
-                <TransportBadge status={station.transport_status} eta={station.transport_eta} />
-              </>
-            )}
           </div>
+          {station.transport_status && (
+            <TransportBadge status={station.transport_status} eta={station.transport_eta} />
+          )}
 
           {/* 24h History Timeline */}
           <StationHistory stationId={station.id} />
