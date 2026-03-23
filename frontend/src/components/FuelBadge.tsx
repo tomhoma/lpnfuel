@@ -12,11 +12,13 @@ export default function FuelBadge({ label, value, price }: FuelBadgeProps) {
   }[value] ?? { dot: 'bg-gray-300', text: 'text-gray-400' }
 
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className={`w-2 h-2 rounded-full ${config.dot}`} />
-      <span className={`text-sm font-semibold ${config.text}`}>{label}</span>
+    <span className="inline-flex flex-col items-center">
+      <span className="inline-flex items-center gap-1">
+        <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+        <span className={`text-sm font-semibold ${config.text}`}>{label}</span>
+      </span>
       {price != null && price > 0 && (
-        <span className="text-[11px] text-gray-400 tabular-nums">฿{price.toFixed(2)}</span>
+        <span className="text-[11px] font-semibold text-gray-800 tabular-nums -mt-0.5">฿{price.toFixed(2)}</span>
       )}
     </span>
   )
