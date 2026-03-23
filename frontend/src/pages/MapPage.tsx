@@ -9,6 +9,7 @@ import FilterBar from '../components/FilterBar'
 import FuelSelector from '../components/FuelSelector'
 import StatsBar from '../components/StatsBar'
 import BottomSheet from '../components/BottomSheet'
+import SurveyPopup from '../components/SurveyPopup'
 
 function hasFuel(s: StationWithStatus): boolean {
   return s.gas95 === 'มี' || s.gas91 === 'มี' || s.e20 === 'มี' || s.diesel === 'มี'
@@ -237,6 +238,9 @@ export default function MapPage() {
 
       {/* Bottom sheet */}
       <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} prices={prices} />
+
+      {/* Survey popup — shows once after splash */}
+      <SurveyPopup />
     </div>
   )
 }
