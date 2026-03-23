@@ -189,6 +189,7 @@ export default function MapPage() {
           userLat={geo.lat}
           userLng={geo.lng}
           dataVersion={dataVersion}
+          locateTrigger={geo.requestCount}
         />
 
         {/* Fuel type selector - top left */}

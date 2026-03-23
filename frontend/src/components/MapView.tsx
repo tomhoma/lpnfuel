@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useState, useRef } from 'react'
+import { useMemo, useEffect, useState, useRef, useCallback } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Marker, Tooltip, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { StationWithStatus, FuelType } from '../types'
@@ -51,6 +51,7 @@ interface MapViewProps {
   userLat?: number | null
   userLng?: number | null
   dataVersion: number
+  locateTrigger?: number
 }
 
 // Lamphun province bounds — lock map to this area
@@ -138,11 +139,12 @@ function boundsAroundCenter(center: L.LatLng, points: StationWithStatus[], n: nu
   return L.latLngBounds(latlngs)
 }
 
-function FlyToUser({ lat, lng, stations }: { lat: number; lng: number; stations: StationWithStatus[] }) {
+function FlyToUser({ lat, lng, stations, locateTrigger }: { lat: number; lng: number; stations: StationWithStatus[]; locateTrigger?: number }) {
   const map = useMap()
-  const [hasMoved, setHasMoved] = useState(false)
-  useEffect(() => {
-    if (hasMoved) return
+  const hasInitial = useRef(false)
+  const prevTrigger = useRef(locateTrigger ?? 0)
+
+  const flyToUser = useCallback(() => {
     const userLatLng = L.latLng(lat, lng)
     const points = stations.filter(s => s.lat != null && s.lng != null)
     const fitOpts = {
@@ -151,14 +153,29 @@ function FlyToUser({ lat, lng, stations }: { lat: number; lng: number; stations:
     }
 
     if (points.length >= MIN_VISIBLE) {
-      // Zoom เข้าหา user location + ให้เห็นอย่างน้อย 3 ปั๊ม
       const nearBounds = boundsAroundCenter(userLatLng, points, MIN_VISIBLE, fitOpts)
       map.flyToBounds(nearBounds, { ...fitOpts, maxZoom: 14, duration: 1 })
     } else {
       map.flyTo([lat, lng], 13, { duration: 1 })
     }
-    setHasMoved(true)
-  }, [map, lat, lng, hasMoved, stations])
+  }, [map, lat, lng, stations])
+
+  // Initial fly on first render
+  useEffect(() => {
+    if (hasInitial.current) return
+    flyToUser()
+    hasInitial.current = true
+  }, [flyToUser])
+
+  // Re-fly when user clicks locate button (trigger changes)
+  useEffect(() => {
+    const trigger = locateTrigger ?? 0
+    if (trigger !== prevTrigger.current) {
+      prevTrigger.current = trigger
+      flyToUser()
+    }
+  }, [locateTrigger, flyToUser])
+
   return null
 }
 
@@ -285,7 +302,7 @@ function DistrictOverlay() {
   )
 }
 
-export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng, dataVersion }: MapViewProps) {
+export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng, dataVersion, locateTrigger }: MapViewProps) {
   const markerSize = useMemo(() => {
     return window.innerWidth < 640 ? 28 : 24
   }, [])
@@ -355,7 +372,7 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       {userLat != null && userLng != null && (
         <>
           <UserLocationMarker lat={userLat} lng={userLng} />
-          <FlyToUser lat={userLat} lng={userLng} stations={stations} />
+          <FlyToUser lat={userLat} lng={userLng} stations={stations} locateTrigger={locateTrigger} />
         </>
       )}
     </MapContainer>
