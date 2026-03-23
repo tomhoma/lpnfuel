@@ -12,6 +12,7 @@ import (
 	"lpnfuel/api"
 	"lpnfuel/config"
 	"lpnfuel/db"
+	"lpnfuel/scheduler"
 )
 
 func main() {
@@ -32,6 +33,9 @@ func main() {
 		log.Printf("Geo import (non-fatal): %v", err)
 		_ = importGeoCSV(context.Background(), "data/stations_geo.csv")
 	}
+
+	// Start price scheduler (fetches PTT + Bangchak daily at 05:15 & 19:30)
+	scheduler.StartPriceScheduler(context.Background())
 
 	router := api.NewRouter(cfg.CORSOrigins, cfg.IngestAPIKey)
 	addr := fmt.Sprintf(":%s", cfg.Port)

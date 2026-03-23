@@ -199,9 +199,16 @@ func GetLatestPrices(ctx context.Context) (map[string]map[string]float64, error)
 
 func UpsertFuelPrices(ctx context.Context, prices []models.FuelPrice) error {
 	for _, p := range prices {
+		// Only insert if price changed or no record today
 		_, err := Pool.Exec(ctx, `
 			INSERT INTO fuel_prices (brand, fuel_type, price)
-			VALUES ($1, $2, $3)
+			SELECT $1, $2, $3
+			WHERE NOT EXISTS (
+				SELECT 1 FROM fuel_prices
+				WHERE brand = $1 AND fuel_type = $2
+				  AND price = $3
+				  AND fetched_at::date = CURRENT_DATE
+			)
 		`, p.Brand, p.FuelType, p.Price)
 		if err != nil {
 			return fmt.Errorf("insert price %s/%s: %w", p.Brand, p.FuelType, err)
