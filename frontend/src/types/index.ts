@@ -84,6 +84,11 @@ export interface PricesResponse {
   date: string
 }
 
+export interface StationDetailResponse {
+  station: StationWithStatus
+  history_7d: FuelStatus[]
+}
+
 export type FuelType = 'gas95' | 'gas91' | 'e20' | 'diesel'
 export type FilterStatus = 'all' | 'available' | 'empty' | 'incoming'
 export type BrandFilter = 'all' | 'ปตท.' | 'บางจาก' | 'พีที' | 'คาลเท็กซ์' | 'เชลล์'

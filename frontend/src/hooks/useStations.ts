@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { StationsResponse, DashboardResponse, PricesResponse } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
@@ -8,14 +8,35 @@ export function useStations() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [dataVersion, setDataVersion] = useState(0)       // นับครั้งที่ข้อมูลเปลี่ยนจริง
+  const [justRefreshed, setJustRefreshed] = useState(false) // flash indicator
 
-  const fetch = useCallback(async () => {
+  const prevUpdatedAt = useRef<string | null>(null)
+  const isFirstFetch = useRef(true)
+
+  const fetchData = useCallback(async () => {
     try {
       const res = await window.fetch(`${API_URL}/stations`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const json: StationsResponse = await res.json()
-      setData(json)
-      setLastUpdated(new Date())
+
+      const isNew = json.updated_at !== prevUpdatedAt.current
+      const wasFirst = isFirstFetch.current
+
+      if (isNew) {
+        prevUpdatedAt.current = json.updated_at
+        isFirstFetch.current = false
+        setData(json)
+        setLastUpdated(new Date())
+        setDataVersion(v => v + 1)
+
+        // Flash "อัพเดทแล้ว" เฉพาะตอนที่ไม่ใช่ครั้งแรก
+        if (!wasFirst) {
+          setJustRefreshed(true)
+          setTimeout(() => setJustRefreshed(false), 2500)
+        }
+      }
+
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'โหลดข้อมูลไม่ได้')
@@ -25,12 +46,12 @@ export function useStations() {
   }, [])
 
   useEffect(() => {
-    fetch()
-    const interval = setInterval(fetch, 3 * 60 * 1000) // refresh every 3 min
+    fetchData()
+    const interval = setInterval(fetchData, 3 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [fetch])
+  }, [fetchData])
 
-  return { data, loading, error, lastUpdated, refresh: fetch }
+  return { data, loading, error, lastUpdated, dataVersion, justRefreshed, refresh: fetchData }
 }
 
 export function useDashboard() {

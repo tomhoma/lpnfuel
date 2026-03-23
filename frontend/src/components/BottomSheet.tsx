@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { StationWithStatus } from '../types'
 import FuelBadge from './FuelBadge'
 import TransportBadge from './TransportBadge'
+import StationHistory from './StationHistory'
 import { formatDistance } from '../hooks/useDistance'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
@@ -132,6 +133,9 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
+
+          {/* 24h History Timeline */}
+          <StationHistory stationId={station.id} />
 
           {/* Updated at */}
           {station.source_updated && (

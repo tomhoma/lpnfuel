@@ -10,6 +10,7 @@ interface MapViewProps {
   onStationClick: (station: StationWithStatus) => void
   userLat?: number | null
   userLng?: number | null
+  dataVersion: number
 }
 
 // Lamphun province bounds — lock map to this area
@@ -121,9 +122,10 @@ function FlyToUser({ lat, lng, stations }: { lat: number; lng: number; stations:
   return null
 }
 
-function FitBounds({ stations, userLat, userLng }: { stations: StationWithStatus[]; userLat?: number | null; userLng?: number | null }) {
+function FitBounds({ stations, userLat, userLng, dataVersion }: { stations: StationWithStatus[]; userLat?: number | null; userLng?: number | null; dataVersion: number }) {
   const map = useMap()
   const prevCount = useRef(stations.length)
+  const prevDataVersion = useRef(dataVersion)
   const hasInitialFit = useRef(false)
 
   useEffect(() => {
@@ -140,15 +142,23 @@ function FitBounds({ stations, userLat, userLng }: { stations: StationWithStatus
       map.fitBounds(bounds, { ...fitOpts, maxZoom: DEFAULT_ZOOM })
       hasInitialFit.current = true
       prevCount.current = stations.length
+      prevDataVersion.current = dataVersion
       return
     }
 
+    // Background data refresh → อัพเดท count เฉยๆ ไม่ zoom
+    if (dataVersion !== prevDataVersion.current) {
+      prevDataVersion.current = dataVersion
+      prevCount.current = stations.length
+      return
+    }
+
+    // Filter เปลี่ยน (user action) → zoom ถ้าจำเป็น
     if (stations.length !== prevCount.current) {
       const currentBounds = map.getBounds()
       const visibleStations = points.filter(s => currentBounds.contains(L.latLng(s.lat!, s.lng!)))
 
       if (visibleStations.length < MIN_VISIBLE) {
-        // ใช้ user location เป็นศูนย์กลาง ถ้ามี, ไม่งั้นใช้ map center
         const center = (userLat != null && userLng != null)
           ? L.latLng(userLat, userLng)
           : map.getCenter()
@@ -158,7 +168,7 @@ function FitBounds({ stations, userLat, userLng }: { stations: StationWithStatus
 
       prevCount.current = stations.length
     }
-  }, [stations, map, userLat, userLng])
+  }, [stations, map, userLat, userLng, dataVersion])
 
   return null
 }
@@ -235,7 +245,7 @@ function DistrictOverlay() {
   )
 }
 
-export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng }: MapViewProps) {
+export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng, dataVersion }: MapViewProps) {
   const markerSize = useMemo(() => {
     return window.innerWidth < 640 ? 11 : 9
   }, [])
@@ -258,7 +268,7 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       />
 
       {/* Auto-fit to filtered stations */}
-      <FitBounds stations={stations} userLat={userLat} userLng={userLng} />
+      <FitBounds stations={stations} userLat={userLat} userLng={userLng} dataVersion={dataVersion} />
 
       {/* District boundaries */}
       <DistrictOverlay />

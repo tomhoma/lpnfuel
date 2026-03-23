@@ -1,11 +1,12 @@
 import { useDashboard, usePrices } from '../hooks/useStations'
 import TrendChart from '../components/TrendChart'
+import PriceCard from '../components/PriceCard'
 import FeedbackCard from '../components/FeedbackCard'
 import { Link } from 'react-router-dom'
 
 export default function DashboardPage() {
   const { data, loading, error } = useDashboard()
-  const _prices = usePrices() // keep hook for future use
+  const prices = usePrices()
 
   const sourceTime = data?.updated_at
     ? new Date(data.updated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
@@ -69,6 +70,9 @@ export default function DashboardPage() {
           )}
         </div>
 
+        {/* Fuel prices */}
+        <PriceCard prices={prices} />
+
         {/* District breakdown */}
         {by_district?.length > 0 && (
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
@@ -103,7 +107,39 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Trend chart — moved up */}
+        {/* Brand breakdown */}
+        {by_brand?.length > 0 && (
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex items-baseline justify-between mb-3">
+              <h3 className="text-sm font-bold">รายแบรนด์</h3>
+              <span className="text-xs text-gray-400">ปั๊มที่มีน้ำมัน / ทั้งหมด</span>
+            </div>
+            <div className="space-y-2">
+              {[...by_brand].sort((a, b) => b.available_rate - a.available_rate).map(b => {
+                const ratePct = Math.round(b.available_rate * 100)
+                return (
+                  <div key={b.brand} className="flex items-center gap-3">
+                    <span className="text-sm flex-1 truncate">{b.brand}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${ratePct > 50 ? 'bg-green-500' : ratePct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                        style={{ width: `${ratePct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500 w-14 text-right">
+                      {b.with_fuel}/{b.total}
+                    </span>
+                    <span className={`text-xs font-semibold w-10 text-right ${ratePct > 50 ? 'text-green-600' : ratePct > 20 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {ratePct}%
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Trend chart */}
         {data.trend_7d && <TrendChart data={data.trend_7d} />}
 
         {/* Incoming supply */}

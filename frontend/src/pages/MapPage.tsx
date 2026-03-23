@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
 import { useStations } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
-import { haversine } from '../hooks/useDistance'
+import { haversine, formatDistance } from '../hooks/useDistance'
 import MapView from '../components/MapView'
 import FilterBar from '../components/FilterBar'
 import FuelSelector from '../components/FuelSelector'
@@ -24,7 +24,7 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
 }
 
 export default function MapPage() {
-  const { data, loading, error, lastUpdated } = useStations()
+  const { data, loading, error, lastUpdated, dataVersion, justRefreshed } = useStations()
   const geo = useGeolocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -86,6 +86,32 @@ export default function MapPage() {
     setSelectedStation(station)
   }, [])
 
+  const handleFindNearest = useCallback(() => {
+    if (geo.lat == null || geo.lng == null) {
+      geo.request()
+      return
+    }
+    if (!data?.stations) return
+
+    // หาปั๊มที่มีน้ำมัน (ตาม fuel filter ถ้ามี, ไม่งั้นดูรวม)
+    const available = data.stations.filter(s => {
+      if (s.lat == null || s.lng == null) return false
+      if (fuelFilter) return getFuelValue(s, fuelFilter) === 'มี'
+      return hasFuel(s)
+    })
+
+    if (available.length === 0) return
+
+    // เรียงตามระยะทาง
+    const withDist = available.map(s => ({
+      ...s,
+      distance_km: haversine(geo.lat!, geo.lng!, s.lat!, s.lng!),
+    })).sort((a, b) => a.distance_km - b.distance_km)
+
+    // เปิด BottomSheet ของปั๊มที่ใกล้สุด
+    setSelectedStation(withDist[0])
+  }, [geo.lat, geo.lng, data, fuelFilter])
+
   if (loading || !splashDone) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
@@ -129,7 +155,7 @@ export default function MapPage() {
           <span className="text-base font-bold text-gray-800">ค้นหาน้ำมันในลำพูน</span>
         </div>
         <div className="text-xs text-gray-400">
-          ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span className="inline-flex items-center gap-1"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{sourceTime}</span>}
+          ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span className={`inline-flex items-center gap-1 transition-colors duration-700 ${justRefreshed ? 'text-green-500' : ''}`}><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{justRefreshed ? 'อัพเดทแล้ว' : sourceTime}</span>}
         </div>
       </div>
 
@@ -160,6 +186,7 @@ export default function MapPage() {
           onStationClick={handleStationClick}
           userLat={geo.lat}
           userLng={geo.lng}
+          dataVersion={dataVersion}
         />
 
         {/* Fuel type selector - top left */}
@@ -179,8 +206,21 @@ export default function MapPage() {
           </Link>
         </div>
 
-        {/* Locate me — bottom right */}
-        <div className="absolute bottom-16 right-3 z-[500]">
+        {/* Bottom-right buttons stack */}
+        <div className="absolute bottom-16 right-3 z-[500] flex flex-col gap-2 items-end">
+          {/* Find nearest station with fuel */}
+          <button
+            onClick={handleFindNearest}
+            className="bg-green-600 text-white shadow-lg rounded-full px-3.5 py-2 flex items-center gap-1.5 active:scale-90 transition text-xs font-semibold"
+            title="หาปั๊มใกล้ฉัน"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            ปั๊มใกล้ฉัน
+          </button>
+
+          {/* Locate me */}
           <button
             onClick={geo.request}
             className="bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
