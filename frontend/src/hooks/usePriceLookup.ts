@@ -4,7 +4,6 @@ import type { PricesResponse } from '../types'
 const BRAND_MAP: Record<string, string> = {
   'ปตท.': 'PTT',
   'พีที': 'PTT',       // PT uses PTT-like pricing
-  'บางจาก': 'บางจาก',
 }
 
 // Map our fuel keys (gas91, diesel, etc.) to the price API fuel_type keys

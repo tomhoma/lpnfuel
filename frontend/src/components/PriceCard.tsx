@@ -14,7 +14,6 @@ const MAIN_FUELS = [
 
 const BRAND_DISPLAY: Record<string, { label: string; note: string }> = {
   'PTT': { label: 'ปตท.', note: 'ราคาจังหวัดลำพูน' },
-  'บางจาก': { label: 'บางจาก', note: 'ราคากลาง' },
 }
 
 export default function PriceCard({ prices }: PriceCardProps) {

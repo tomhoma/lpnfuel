@@ -1,7 +1,6 @@
 package fetcher
 
 import (
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -140,88 +139,12 @@ func FetchPTTORPrices() ([]models.FuelPrice, error) {
 	return prices, nil
 }
 
-// ── Bangchak REST API ──────────────────────────────────────────────
-
-const bangchakURL = "https://oil-price.bangchak.co.th/ApiOilPrice2/th"
-
-type bangchakResponse struct {
-	OilList string `json:"OilList"`
-}
-
-type bangchakOil struct {
-	OilName    string  `json:"OilName"`
-	PriceToday float64 `json:"PriceToday"`
-}
-
-var bangchakNameToFuelType = map[string]string{
-	"ไฮดีเซล S":                      "diesel",
-	"แก๊สโซฮอล์ 91 S EVO":            "gasohol91",
-	"แก๊สโซฮอล์ 95 S EVO":            "gasohol95",
-	"แก๊สโซฮอล์ E20 S EVO":           "gasoholE20",
-	"แก๊สโซฮอล์ E85 S EVO":           "gasoholE85",
-	"ไฮพรีเมียมดีเซล S":              "premium_diesel",
-	"ไฮพรีเมียม 97 แก๊สโซฮอล์ 95":    "super_power_gsh95",
-}
-
-func FetchBangchakPrices() ([]models.FuelPrice, error) {
-	resp, err := http.Get(bangchakURL)
-	if err != nil {
-		return nil, fmt.Errorf("bangchak fetch: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("bangchak read: %w", err)
-	}
-
-	// Response is an array with one object
-	var arr []bangchakResponse
-	if err := json.Unmarshal(body, &arr); err != nil {
-		return nil, fmt.Errorf("bangchak json: %w", err)
-	}
-	if len(arr) == 0 || arr[0].OilList == "" {
-		return nil, fmt.Errorf("bangchak: empty OilList")
-	}
-
-	// OilList is a JSON string inside JSON — double parse
-	var oils []bangchakOil
-	if err := json.Unmarshal([]byte(arr[0].OilList), &oils); err != nil {
-		return nil, fmt.Errorf("bangchak OilList parse: %w", err)
-	}
-
-	var prices []models.FuelPrice
-	for _, oil := range oils {
-		fuelType, ok := bangchakNameToFuelType[oil.OilName]
-		if !ok || oil.PriceToday <= 0 {
-			continue
-		}
-		prices = append(prices, models.FuelPrice{
-			Brand:    "บางจาก",
-			FuelType: fuelType,
-			Price:    oil.PriceToday,
-		})
-	}
-
-	log.Printf("Bangchak: fetched %d fuel prices", len(prices))
-	return prices, nil
-}
-
-// FetchAllPrices fetches from both sources and returns combined results
+// FetchAllPrices fetches PTTOR prices for Lamphun province
 func FetchAllPrices() []models.FuelPrice {
-	var all []models.FuelPrice
-
-	if prices, err := FetchPTTORPrices(); err != nil {
+	prices, err := FetchPTTORPrices()
+	if err != nil {
 		log.Printf("PTTOR price fetch error: %v", err)
-	} else {
-		all = append(all, prices...)
+		return nil
 	}
-
-	if prices, err := FetchBangchakPrices(); err != nil {
-		log.Printf("Bangchak price fetch error: %v", err)
-	} else {
-		all = append(all, prices...)
-	}
-
-	return all
+	return prices
 }
