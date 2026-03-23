@@ -4,32 +4,23 @@ const SURVEY_KEY = 'lpnfuel_survey_crowd_v1'
 const DISMISS_KEY = 'lpnfuel_survey_crowd_v1_dismiss'
 const SURVEY_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
-type Vote = 'yes' | 'maybe' | 'no'
-
-const OPTIONS: { value: Vote; emoji: string; label: string }[] = [
-  { value: 'yes', emoji: '🙌', label: 'อยากได้มาก' },
-  { value: 'maybe', emoji: '🤔', label: 'น่าสนใจ' },
-  { value: 'no', emoji: '😐', label: 'ไม่จำเป็น' },
-]
+type Vote = 'yes' | 'no'
 
 export default function SurveyPopup() {
   const [show, setShow] = useState(false)
-  const [voted, setVoted] = useState(false)
-  const [sending, setSending] = useState(false)
+  const [phase, setPhase] = useState<'vote' | 'sending' | 'thanks'>('vote')
 
   useEffect(() => {
-    // Don't show if already voted or dismissed
     const alreadyVoted = localStorage.getItem(SURVEY_KEY)
     const dismissed = localStorage.getItem(DISMISS_KEY)
     if (alreadyVoted || dismissed) return
 
-    // Show after 2s delay (after splash settles)
     const timer = setTimeout(() => setShow(true), 2000)
     return () => clearTimeout(timer)
   }, [])
 
   const handleVote = async (vote: Vote) => {
-    setSending(true)
+    setPhase('sending')
     localStorage.setItem(SURVEY_KEY, vote)
     try {
       await fetch(SURVEY_URL, {
@@ -45,11 +36,10 @@ export default function SurveyPopup() {
       })
     } catch {
       // silent
-    } finally {
-      setSending(false)
     }
-    setVoted(true)
-    setTimeout(() => setShow(false), 1500)
+    setPhase('thanks')
+    // Auto-close after 3s if user doesn't tap
+    setTimeout(() => setShow(false), 3000)
   }
 
   const handleDismiss = () => {
@@ -60,49 +50,91 @@ export default function SurveyPopup() {
   if (!show) return null
 
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6" onClick={handleDismiss}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={phase === 'vote' ? handleDismiss : undefined} />
       <div
-        className="relative bg-white rounded-2xl p-5 w-full max-w-xs shadow-2xl animate-slideUp"
+        className="relative bg-white rounded-2xl w-full max-w-[280px] shadow-2xl animate-slideUp overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          onClick={handleDismiss}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center"
-        >
-          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        {voted ? (
-          <div className="text-center py-4">
-            <div className="text-4xl mb-2">✅</div>
-            <div className="text-sm font-semibold text-gray-800">ขอบคุณที่โหวต!</div>
+        {/* === SENDING STATE === */}
+        {phase === 'sending' && (
+          <div className="flex flex-col items-center justify-center py-12 px-6">
+            <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-3" />
+            <span className="text-sm text-gray-500">กำลังส่ง...</span>
           </div>
-        ) : (
+        )}
+
+        {/* === THANK YOU STATE === */}
+        {phase === 'thanks' && (
+          <div className="text-center py-8 px-6">
+            <img
+              src="/logo.png"
+              alt="LPN Fuel"
+              className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow"
+            />
+            <div className="text-lg font-bold text-gray-800 mb-1">ขอบคุณครับ! 🎉</div>
+            <div className="text-xs text-gray-500 mb-5">
+              เสียงของคุณมีค่า เราจะนำไปพัฒนาต่อ
+            </div>
+            <button
+              onClick={() => setShow(false)}
+              className="text-xs text-gray-400 underline"
+            >
+              ปิด
+            </button>
+          </div>
+        )}
+
+        {/* === VOTE STATE === */}
+        {phase === 'vote' && (
           <>
-            <div className="text-center mb-4">
-              <div className="text-3xl mb-2">📢</div>
-              <div className="text-sm font-bold text-gray-800">อยากให้เพิ่มฟีเจอร์<br />"รายงานจากผู้ใช้" ไหม?</div>
-              <div className="text-xs text-gray-500 mt-1">
-                ให้คนขับรถช่วยรายงานสถานะน้ำมันแบบ real-time
-              </div>
+            {/* Close button */}
+            <button
+              onClick={handleDismiss}
+              className="absolute top-3 right-3 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center z-10"
+            >
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Cow mascot header */}
+            <div className="bg-gradient-to-b from-green-50 to-white pt-5 pb-3 flex justify-center">
+              <img
+                src="/logo.png"
+                alt="LPN Fuel"
+                className="w-24 h-24 object-contain drop-shadow-lg"
+              />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {OPTIONS.map(opt => (
+            {/* Content */}
+            <div className="px-5 pb-5">
+              <div className="text-center mb-4">
+                <div className="text-[15px] font-bold text-gray-800 leading-snug">
+                  อยากให้เพิ่มระบบ<br />
+                  "รายงานจากหน้าปั๊ม" ไหม?
+                </div>
+                <div className="text-xs text-gray-500 mt-1.5">
+                  ให้ชาวลำพูนช่วยอัปเดตสถานะน้ำมัน<br />
+                  แบบเรียลไทม์...
+                </div>
+              </div>
+
+              {/* 2 buttons */}
+              <div className="grid grid-cols-2 gap-3">
                 <button
-                  key={opt.value}
-                  onClick={() => handleVote(opt.value)}
-                  disabled={sending}
-                  className="flex flex-col items-center gap-1 py-3 rounded-xl bg-gray-50 border border-gray-200 active:scale-95 transition hover:border-orange-300 disabled:opacity-50"
+                  onClick={() => handleVote('yes')}
+                  className="py-3 rounded-xl bg-green-500 text-white font-semibold text-sm active:scale-95 transition shadow-sm"
                 >
-                  <span className="text-2xl">{opt.emoji}</span>
-                  <span className="text-[11px] font-medium text-gray-700">{opt.label}</span>
+                  👍 อยากได้
                 </button>
-              ))}
+                <button
+                  onClick={() => handleVote('no')}
+                  className="py-3 rounded-xl bg-gray-100 text-gray-600 font-semibold text-sm active:scale-95 transition"
+                >
+                  ไม่อยากได้
+                </button>
+              </div>
             </div>
           </>
         )}
