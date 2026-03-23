@@ -27,21 +27,36 @@ func Connect(databaseURL string) error {
 }
 
 func RunMigrations() error {
-	migrationSQL, err := os.ReadFile("db/migrations/001_init.sql")
-	if err != nil {
-		// Try relative path from backend dir
-		migrationSQL, err = os.ReadFile("../backend/db/migrations/001_init.sql")
-		if err != nil {
-			return fmt.Errorf("failed to read migration file: %w", err)
+	// Find migration directory
+	dir := "db/migrations"
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		dir = "../backend/db/migrations"
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			return fmt.Errorf("migration directory not found")
 		}
 	}
 
-	_, err = Pool.Exec(context.Background(), string(migrationSQL))
+	// Read and sort all .sql files
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return fmt.Errorf("migration failed: %w", err)
+		return fmt.Errorf("failed to read migration dir: %w", err)
 	}
 
-	log.Println("Migrations applied")
+	for _, entry := range entries {
+		if entry.IsDir() || len(entry.Name()) < 4 || entry.Name()[len(entry.Name())-4:] != ".sql" {
+			continue
+		}
+		path := dir + "/" + entry.Name()
+		sql, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read %s: %w", entry.Name(), err)
+		}
+		if _, err := Pool.Exec(context.Background(), string(sql)); err != nil {
+			return fmt.Errorf("migration %s failed: %w", entry.Name(), err)
+		}
+		log.Printf("Migration applied: %s", entry.Name())
+	}
+
 	return nil
 }
 

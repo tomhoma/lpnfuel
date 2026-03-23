@@ -14,7 +14,6 @@ const MAIN_FUELS = [
 
 const BRAND_DISPLAY: Record<string, { label: string; note: string }> = {
   'PTT': { label: 'ปตท.', note: 'ราคาจังหวัดลำพูน' },
-  'บางจาก': { label: 'บางจาก', note: 'ราคา กทม.' },
 }
 
 export default function PriceCard({ prices }: PriceCardProps) {
@@ -22,16 +21,42 @@ export default function PriceCard({ prices }: PriceCardProps) {
     return null
   }
 
-  const brands = Object.keys(prices.prices)
+  // Flatten district-level prices into brand-level for display
+  // Use เมืองลำพูน as default district for overview card
+  const brandFuels = new Map<string, Record<string, number>>()
+  for (const [, districtBrands] of Object.entries(prices.prices)) {
+    for (const [brand, fuels] of Object.entries(districtBrands)) {
+      if (!brandFuels.has(brand)) {
+        brandFuels.set(brand, {})
+      }
+      const existing = brandFuels.get(brand)!
+      for (const [fuel, price] of Object.entries(fuels)) {
+        // Keep the first price found (prioritizes non-empty district)
+        if (existing[fuel] == null) {
+          existing[fuel] = price
+        }
+      }
+    }
+  }
+
+  // Try to use เมืองลำพูน prices for PTT if available
+  const mueangPrices = prices.prices['เมืองลำพูน']
+  if (mueangPrices) {
+    for (const [brand, fuels] of Object.entries(mueangPrices)) {
+      brandFuels.set(brand, fuels)
+    }
+  }
+
+  const brands = Array.from(brandFuels.keys())
 
   // Find cheapest diesel for comparison
   const dieselPrices = brands
-    .map(b => ({ brand: b, price: prices.prices[b]['diesel'] }))
-    .filter(x => x.price != null && x.price > 0)
-    .sort((a, b) => a.price! - b.price!)
+    .map(b => ({ brand: b, price: brandFuels.get(b)?.['diesel'] }))
+    .filter((x): x is { brand: string; price: number } => x.price != null && x.price > 0)
+    .sort((a, b) => a.price - b.price)
 
   const hasDieselDiff = dieselPrices.length >= 2 &&
-    dieselPrices[dieselPrices.length - 1].price! - dieselPrices[0].price! > 0
+    dieselPrices[dieselPrices.length - 1].price - dieselPrices[0].price > 0
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -44,7 +69,7 @@ export default function PriceCard({ prices }: PriceCardProps) {
       {/* Brand rows — card style */}
       <div className="px-4 pb-3 space-y-3">
         {brands.map(brand => {
-          const fuels = prices.prices[brand]
+          const fuels = brandFuels.get(brand) ?? {}
           const info = BRAND_DISPLAY[brand] ?? { label: brand, note: '' }
 
           return (
@@ -79,7 +104,7 @@ export default function PriceCard({ prices }: PriceCardProps) {
 
       {/* Diesel comparison tip */}
       {hasDieselDiff && (() => {
-        const diff = dieselPrices[dieselPrices.length - 1].price! - dieselPrices[0].price!
+        const diff = dieselPrices[dieselPrices.length - 1].price - dieselPrices[0].price
         const cheapest = BRAND_DISPLAY[dieselPrices[0].brand]?.label ?? dieselPrices[0].brand
         return (
           <div className="bg-blue-50 px-4 py-2.5 text-xs text-blue-700 font-medium border-t border-blue-100">

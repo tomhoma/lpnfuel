@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface GeoState {
   lat: number | null
@@ -14,13 +14,20 @@ export function useGeolocation() {
     error: null,
     loading: false,
   })
+  const [requestCount, setRequestCount] = useState(0)
+  const isInitial = useRef(true)
 
-  const request = () => {
+  const request = useCallback(() => {
     if (!navigator.geolocation) {
       setState(s => ({ ...s, error: 'เบราว์เซอร์ไม่รองรับ GPS' }))
       return
     }
     setState(s => ({ ...s, loading: true }))
+    // Only increment on user-initiated requests (not the initial auto-request)
+    if (!isInitial.current) {
+      setRequestCount(c => c + 1)
+    }
+    isInitial.current = false
     navigator.geolocation.getCurrentPosition(
       pos => setState({
         lat: pos.coords.latitude,
@@ -31,11 +38,11 @@ export function useGeolocation() {
       err => setState(s => ({ ...s, error: err.message, loading: false })),
       { enableHighAccuracy: true, timeout: 10000 }
     )
-  }
+  }, [])
 
   useEffect(() => {
     request()
-  }, [])
+  }, [request])
 
-  return { ...state, request }
+  return { ...state, request, requestCount }
 }

@@ -70,7 +70,8 @@ export default function FeedbackCard() {
         <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center" onClick={() => !sending && setOpen(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 pb-8 animate-slideUp"
+            className="relative bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-5 animate-slideUp"
+            style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom, 0px))' }}
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}

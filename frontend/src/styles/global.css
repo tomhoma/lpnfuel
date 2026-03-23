@@ -7,7 +7,7 @@
 }
 
 body {
-  font-family: 'Sarabun', sans-serif;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
   background: #ffffff;
   color: #1A1A2E;
   overscroll-behavior: none;
@@ -15,7 +15,7 @@ body {
 
 /* Leaflet overrides */
 .leaflet-container {
-  font-family: 'Sarabun', sans-serif;
+  font-family: 'IBM Plex Sans Thai', sans-serif;
 }
 
 .leaflet-control-attribution {
@@ -28,7 +28,7 @@ body {
 
 /* Tooltip styles */
 .station-tooltip {
-  font-family: 'Sarabun', sans-serif !important;
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
   font-size: 12px !important;
   padding: 4px 8px !important;
   border-radius: 6px !important;
@@ -37,7 +37,7 @@ body {
 }
 
 .user-tooltip {
-  font-family: 'Sarabun', sans-serif !important;
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
   font-size: 11px !important;
   color: #2563EB !important;
   font-weight: 600 !important;
@@ -48,7 +48,7 @@ body {
 }
 
 .district-tooltip {
-  font-family: 'Sarabun', sans-serif !important;
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
   font-size: 11px !important;
   font-weight: 500 !important;
   color: #374151 !important;
@@ -108,7 +108,7 @@ body {
 /* Ticker animation — GPU-accelerated seamless loop */
 @keyframes ticker {
   0% { transform: translate3d(0, 0, 0); }
-  100% { transform: translate3d(-50%, 0, 0); }
+  100% { transform: translate3d(-25%, 0, 0); }
 }
 
 .animate-ticker {

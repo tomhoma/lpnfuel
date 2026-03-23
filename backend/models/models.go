@@ -36,6 +36,7 @@ type StationWithStatus struct {
 type FuelPrice struct {
 	ID        int       `json:"id"`
 	Brand     string    `json:"brand"`
+	District  string    `json:"district"`
 	FuelType  string    `json:"fuel_type"`
 	Price     float64   `json:"price"`
 	FetchedAt time.Time `json:"fetched_at"`
@@ -109,8 +110,8 @@ type StationsResponse struct {
 }
 
 type PricesResponse struct {
-	Prices map[string]map[string]float64 `json:"prices"`
-	Date   string                        `json:"date"`
+	Prices map[string]map[string]map[string]float64 `json:"prices"` // district → brand → fuel_type → price
+	Date   string                                   `json:"date"`
 }
 
 type HealthResponse struct {
