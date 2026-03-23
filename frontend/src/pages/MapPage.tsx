@@ -136,10 +136,8 @@ export default function MapPage() {
 
       {/* Filter */}
       <FilterBar
-        status={statusFilter}
-        brand={brandFilter}
-        onStatus={setStatusFilter}
-        onBrand={setBrandFilter}
+        selectedFuel={fuelFilter}
+        onFuelSelect={setFuelFilter}
         stationCount={filteredStations.length}
       />
 
