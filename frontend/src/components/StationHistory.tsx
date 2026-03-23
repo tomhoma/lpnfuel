@@ -4,10 +4,10 @@ import type { FuelStatus, StationDetailResponse } from '../types'
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
 const FUEL_TYPES = [
-  { key: 'diesel' as const, label: 'ดีเซล', color: '#3B82F6' },
-  { key: 'gas91' as const, label: '91', color: '#22C55E' },
-  { key: 'gas95' as const, label: '95', color: '#EAB308' },
-  { key: 'e20' as const, label: 'E20', color: '#A855F7' },
+  { key: 'diesel' as const, label: 'ดีเซล', labelColor: '#3B82F6' },
+  { key: 'gas91' as const, label: '91', labelColor: '#22C55E' },
+  { key: 'gas95' as const, label: '95', labelColor: '#EAB308' },
+  { key: 'e20' as const, label: 'E20', labelColor: '#A855F7' },
 ]
 
 interface Props {
@@ -89,13 +89,13 @@ export default function StationHistory({ stationId }: Props) {
       <div className="space-y-1">
         {FUEL_TYPES.map(fuel => (
           <div key={fuel.key} className="flex items-center gap-1.5">
-            <span className="text-[10px] text-gray-500 w-8 text-right flex-shrink-0">{fuel.label}</span>
+            <span className="text-[10px] font-bold w-8 text-right flex-shrink-0" style={{ color: fuel.labelColor }}>{fuel.label}</span>
             <div className="flex flex-1 gap-px">
               {timeline.map((slot, i) => {
                 const val = slot.record ? slot.record[fuel.key] : null
                 let bg = '#E5E7EB' // gray — no data
-                if (val === 'มี') bg = fuel.color
-                else if (val === 'หมด') bg = '#EF4444'
+                if (val === 'มี') bg = '#22C55E' // green
+                else if (val === 'หมด') bg = '#EF4444' // red
                 // '-' = ไม่ขาย → gray
 
                 return (

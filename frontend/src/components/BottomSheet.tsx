@@ -31,7 +31,6 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [station, onClose])
 
-  // Close on Escape key
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -40,7 +39,6 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     return () => document.removeEventListener('keydown', handleKey)
   }, [station, onClose])
 
-  // Reset geo report state when station changes
   useEffect(() => {
     setShowGeoReport(false)
     setGeoDetail('')
@@ -82,37 +80,39 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
     ? `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`
     : null
 
+  const updatedText = station.source_updated
+    ? new Date(station.source_updated).toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+      })
+    : null
+
   return (
     <div className="fixed inset-0 z-[1000] flex items-end justify-center bg-black/20 animate-fadeIn">
       <div
         ref={sheetRef}
-        className="bottom-sheet bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[60vh] overflow-y-auto animate-slideUp"
+        className="bottom-sheet bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[55vh] overflow-y-auto animate-slideUp"
       >
         {/* Handle bar */}
-        <div className="flex justify-center pt-2.5 pb-1 sticky top-0 bg-white rounded-t-2xl">
+        <div className="flex justify-center pt-2 pb-0.5 sticky top-0 bg-white rounded-t-2xl">
           <div className="w-8 h-1 bg-gray-300 rounded-full" />
         </div>
 
-        <div className="px-4 pb-5 space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-                  {station.brand}
+        <div className="px-4 pb-4 space-y-2.5">
+          {/* Row 1: brand + distance + close */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
+                {station.brand}
+              </span>
+              {station.distance_km != null && (
+                <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                  {formatDistance(station.distance_km)}
                 </span>
-                {station.distance_km != null && (
-                  <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                    {formatDistance(station.distance_km)}
-                  </span>
-                )}
-              </div>
-              <h2 className="text-lg font-bold leading-snug mt-1">{station.name}</h2>
-              <span className="text-sm text-gray-400">{station.district}</span>
+              )}
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 -mr-1.5 -mt-0.5 text-gray-300 hover:text-gray-500 active:scale-90 transition"
+              className="p-1 -mr-1 text-gray-300 hover:text-gray-500 active:scale-90 transition"
               aria-label="ปิด"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -121,68 +121,73 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
             </button>
           </div>
 
-          {/* Fuel Status Grid */}
-          <div className="grid grid-cols-4 gap-1.5">
-            <FuelBadge label="ดีเซล" value={station.diesel} />
-            <FuelBadge label="แก๊ส 91" value={station.gas91} />
-            <FuelBadge label="95" value={station.gas95} />
-            <FuelBadge label="E20" value={station.e20} />
+          {/* Row 2: name + district inline */}
+          <div>
+            <span className="text-lg font-bold leading-tight">{station.name}</span>
+            <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
-          {/* Transport */}
-          {station.transport_status && (
-            <TransportBadge status={station.transport_status} eta={station.transport_eta} />
-          )}
+          {/* Row 3: fuel dots + transport — all inline */}
+          <div className="flex items-center flex-wrap gap-x-3 gap-y-1">
+            <FuelBadge label="ดีเซล" value={station.diesel} />
+            <FuelBadge label="91" value={station.gas91} />
+            <FuelBadge label="95" value={station.gas95} />
+            <FuelBadge label="E20" value={station.e20} />
+            {station.transport_status && (
+              <>
+                <span className="text-gray-200">|</span>
+                <TransportBadge status={station.transport_status} eta={station.transport_eta} />
+              </>
+            )}
+          </div>
 
           {/* 24h History Timeline */}
           <StationHistory stationId={station.id} />
 
-          {/* Updated at */}
-          {station.source_updated && (
-            <p className="text-xs text-gray-400">
-              อัปเดต: {new Date(station.source_updated).toLocaleString('th-TH', {
-                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-              })}
-            </p>
-          )}
-
-          {/* Navigate button */}
-          {navURL && (
-            <a
-              href={navURL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all text-sm"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              นำทางไปปั๊มนี้
-            </a>
-          )}
+          {/* Row: updated + navigate button */}
+          <div className="flex items-center gap-2">
+            {updatedText && (
+              <span className="text-xs text-gray-400 flex-shrink-0">
+                อัปเดต: {updatedText}
+              </span>
+            )}
+            {navURL && (
+              <a
+                href={navURL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all text-sm flex-shrink-0"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                นำทาง
+              </a>
+            )}
+          </div>
 
           {/* Geo report */}
           {!showGeoReport && !geoSent && (
             <button
               onClick={() => setShowGeoReport(true)}
-              className="w-full text-center text-xs text-gray-400 hover:text-red-500 transition py-1"
+              className="w-full text-center text-xs text-gray-400 hover:text-red-500 transition py-0.5"
             >
               แจ้งตำแหน่งบนแผนที่ไม่ถูกต้อง
             </button>
           )}
 
           {showGeoReport && !geoSent && (
-            <div className="space-y-2 border-t pt-3">
+            <div className="space-y-2 border-t pt-2">
               <p className="text-xs text-gray-500">
-                กรุณาระบุตำแหน่งที่ถูกต้องของปั๊ม เช่น อยู่ใกล้สถานที่อะไร ถนนอะไร จุดสังเกตคืออะไร เพื่อให้ admin ค้นหาใน Google Maps
+                ระบุตำแหน่งที่ถูกต้อง เช่น อยู่ใกล้สถานที่อะไร ถนนอะไร
               </p>
               <textarea
                 value={geoDetail}
                 onChange={(e) => setGeoDetail(e.target.value)}
-                placeholder="เช่น ปั๊มอยู่ตรงแยกไฟแดงหน้าโลตัส ถนน 106 ฝั่งขาเข้าเมือง"
+                placeholder="เช่น ปั๊มอยู่ตรงแยกไฟแดงหน้าโลตัส ถนน 106"
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-                rows={3}
+                rows={2}
               />
               <div className="flex gap-2">
                 <button
@@ -196,25 +201,16 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
                   disabled={!geoDetail.trim() || geoSending}
                   className="flex-1 py-2 text-sm text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-40 transition"
                 >
-                  {geoSending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      กำลังส่ง...
-                    </span>
-                  ) : 'ส่งแจ้งตำแหน่ง'}
+                  {geoSending ? 'กำลังส่ง...' : 'ส่งแจ้งตำแหน่ง'}
                 </button>
               </div>
             </div>
           )}
 
           {geoSent && (
-            <div className="text-center py-2">
-              <p className="text-sm text-green-600 font-semibold">ขอบคุณที่แจ้งข้อมูล</p>
-              <p className="text-xs text-gray-400">admin จะตรวจสอบและอัปเดตตำแหน่งให้</p>
-            </div>
+            <p className="text-center text-sm text-green-600 font-semibold py-1">
+              ขอบคุณที่แจ้งข้อมูล — admin จะตรวจสอบให้
+            </p>
           )}
         </div>
       </div>

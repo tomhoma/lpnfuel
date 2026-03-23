@@ -5,15 +5,15 @@ interface FuelBadgeProps {
 
 export default function FuelBadge({ label, value }: FuelBadgeProps) {
   const config = {
-    'มี': { bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200', status: 'มี' },
-    'หมด': { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', status: 'หมด' },
-    '-': { bg: 'bg-gray-50', text: 'text-gray-400', border: 'border-gray-100', status: '-' },
-  }[value] ?? { bg: 'bg-gray-50', text: 'text-gray-400', border: 'border-gray-100', status: '-' }
+    'มี': { dot: 'bg-green-500', text: 'text-green-700' },
+    'หมด': { dot: 'bg-red-500', text: 'text-red-600' },
+    '-': { dot: 'bg-gray-300', text: 'text-gray-400' },
+  }[value] ?? { dot: 'bg-gray-300', text: 'text-gray-400' }
 
   return (
-    <div className={`flex flex-col items-center py-2 px-1.5 rounded-lg border ${config.bg} ${config.border}`}>
-      <div className="text-xs text-gray-500 leading-tight">{label}</div>
-      <div className={`text-base font-bold leading-tight ${config.text}`}>{config.status}</div>
-    </div>
+    <span className="inline-flex items-center gap-1">
+      <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+      <span className={`text-sm font-semibold ${config.text}`}>{label}</span>
+    </span>
   )
 }
