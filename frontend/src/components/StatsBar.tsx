@@ -59,14 +59,14 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
   return (
     <Link
       to="/dashboard"
-      className="absolute bottom-16 left-3 right-14 z-[500] block active:scale-[0.98] transition-transform"
+      className="absolute bottom-4 left-3 right-3 z-[500] block active:scale-[0.98] transition-transform"
     >
-      <div className="bg-gray-900/80 backdrop-blur-md rounded-full px-4 py-2 shadow-lg overflow-hidden">
+      <div className="bg-gray-900/80 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-lg overflow-hidden">
         <div className="inline-flex whitespace-nowrap animate-ticker will-change-transform">
-          <span className="inline-flex items-center text-[15px] pr-8">
+          <span className="inline-flex items-center text-[13px] pr-8">
             {renderItems()}
           </span>
-          <span className="inline-flex items-center text-[15px] pr-8" aria-hidden="true">
+          <span className="inline-flex items-center text-[13px] pr-8" aria-hidden="true">
             {renderItems()}
           </span>
         </div>

@@ -1,12 +1,11 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
 import { useStations, usePrices } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
-import { haversine, formatDistance } from '../hooks/useDistance'
+import { haversine } from '../hooks/useDistance'
 import MapView from '../components/MapView'
 import FilterBar from '../components/FilterBar'
-import FuelSelector from '../components/FuelSelector'
 import StatsBar from '../components/StatsBar'
 import BottomSheet from '../components/BottomSheet'
 import SurveyPopup from '../components/SurveyPopup'
@@ -88,32 +87,6 @@ export default function MapPage() {
     setSelectedStation(station)
   }, [])
 
-  const handleFindNearest = useCallback(() => {
-    if (geo.lat == null || geo.lng == null) {
-      geo.request()
-      return
-    }
-    if (!data?.stations) return
-
-    // หาปั๊มที่มีน้ำมัน (ตาม fuel filter ถ้ามี, ไม่งั้นดูรวม)
-    const available = data.stations.filter(s => {
-      if (s.lat == null || s.lng == null) return false
-      if (fuelFilter) return getFuelValue(s, fuelFilter) === 'มี'
-      return hasFuel(s)
-    })
-
-    if (available.length === 0) return
-
-    // เรียงตามระยะทาง
-    const withDist = available.map(s => ({
-      ...s,
-      distance_km: haversine(geo.lat!, geo.lng!, s.lat!, s.lng!),
-    })).sort((a, b) => a.distance_km - b.distance_km)
-
-    // เปิด BottomSheet ของปั๊มที่ใกล้สุด
-    setSelectedStation(withDist[0])
-  }, [geo.lat, geo.lng, data, fuelFilter])
-
   if (loading || !splashDone) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-green-50 to-white">
@@ -192,38 +165,8 @@ export default function MapPage() {
           locateTrigger={geo.requestCount}
         />
 
-        {/* Fuel type selector - top left */}
-        <FuelSelector selected={fuelFilter} onSelect={setFuelFilter} />
-
-        {/* Floating stats overlay */}
-        <StatsBar summary={summary} stations={data?.stations || []} prices={prices} />
-
-        {/* Dashboard cow — top right, same level as fuel selector */}
+        {/* Locate me — top right */}
         <div className="absolute top-3 right-3 z-[500]">
-          <Link
-            to="/dashboard"
-            className="active:scale-90 transition drop-shadow-lg block"
-            title="ภาพรวม"
-          >
-            <img src="/cowDash.png" alt="ภาพรวม" className="w-[7.5rem] h-[7.5rem]" />
-          </Link>
-        </div>
-
-        {/* Bottom-right buttons stack */}
-        <div className="absolute bottom-16 right-3 z-[500] flex flex-col gap-2 items-end">
-          {/* Find nearest station with fuel */}
-          <button
-            onClick={handleFindNearest}
-            className="bg-green-600 text-white shadow-lg rounded-full px-3.5 py-2 flex items-center gap-1.5 active:scale-90 transition text-xs font-semibold"
-            title="หาปั๊มใกล้ฉัน"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            ปั๊มใกล้ฉัน
-          </button>
-
-          {/* Locate me */}
           <button
             onClick={geo.request}
             className="bg-white shadow-lg rounded-full w-10 h-10 flex items-center justify-center border border-gray-200 active:scale-90 transition"
@@ -235,6 +178,9 @@ export default function MapPage() {
             </svg>
           </button>
         </div>
+
+        {/* Floating stats overlay */}
+        <StatsBar summary={summary} stations={data?.stations || []} prices={prices} />
       </div>
 
       {/* Bottom sheet */}
