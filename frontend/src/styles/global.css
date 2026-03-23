@@ -117,6 +117,12 @@ body {
   backface-visibility: hidden;
 }
 
+/* Brand marker — remove default leaflet icon styling */
+.brand-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* Scrollbar hide for filter pills */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -1,8 +1,48 @@
 import { useMemo, useEffect, useState, useRef } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Tooltip, GeoJSON, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, CircleMarker, Marker, Tooltip, GeoJSON, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import type { StationWithStatus, FuelType } from '../types'
 import 'leaflet/dist/leaflet.css'
+
+// Brand logo mapping
+const BRAND_LOGO: Record<string, string> = {
+  'ปตท.': '/logos/ptt.png',
+  'พีที': '/logos/pt.png',
+  'บางจาก': '/logos/bangchak.png',
+  'คาลเท็กซ์': '/logos/caltex.png',
+  'เชลล์': '/logos/shell.png',
+}
+
+// Create custom icon with logo + status border
+const iconCache = new Map<string, L.DivIcon>()
+
+function getBrandIcon(brand: string, statusColor: string, size: number): L.DivIcon {
+  const key = `${brand}-${statusColor}-${size}`
+  if (iconCache.has(key)) return iconCache.get(key)!
+
+  const logo = BRAND_LOGO[brand] || '/logos/ptt.png'
+  const borderWidth = 4
+  const totalSize = size + borderWidth * 2
+
+  const icon = L.divIcon({
+    className: 'brand-marker',
+    iconSize: [totalSize, totalSize],
+    iconAnchor: [totalSize / 2, totalSize / 2],
+    tooltipAnchor: [0, -totalSize / 2],
+    html: `<div style="
+      width:${totalSize}px;height:${totalSize}px;
+      border-radius:50%;
+      border:${borderWidth}px solid ${statusColor};
+      background:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,0.35);
+      display:flex;align-items:center;justify-content:center;
+      overflow:hidden;
+    "><img src="${logo}" style="width:${size - 2}px;height:${size - 2}px;object-fit:contain;border-radius:50%;" /></div>`,
+  })
+
+  iconCache.set(key, icon)
+  return icon
+}
 
 interface MapViewProps {
   stations: StationWithStatus[]
@@ -247,7 +287,7 @@ function DistrictOverlay() {
 
 export default function MapView({ stations, selectedFuel, onStationClick, userLat, userLng, dataVersion }: MapViewProps) {
   const markerSize = useMemo(() => {
-    return window.innerWidth < 640 ? 11 : 9
+    return window.innerWidth < 640 ? 28 : 24
   }, [])
 
   return (
@@ -276,22 +316,17 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
       {stations.map((s) => {
         if (s.lat == null || s.lng == null) return null
         const color = getMarkerColor(s, selectedFuel)
+        const icon = getBrandIcon(s.brand, color, markerSize)
         return (
-          <CircleMarker
+          <Marker
             key={s.id}
-            center={[s.lat, s.lng]}
-            radius={markerSize}
-            pathOptions={{
-              color: '#fff',
-              fillColor: color,
-              fillOpacity: 0.9,
-              weight: 2,
-            }}
+            position={[s.lat, s.lng]}
+            icon={icon}
             eventHandlers={{
               click: () => onStationClick(s),
             }}
           >
-            <Tooltip direction="top" offset={[0, -8]} className="station-tooltip">
+            <Tooltip direction="top" className="station-tooltip">
               <div style={{ fontWeight: 600 }}>{s.brand} {s.name}</div>
               <div style={{ display: 'flex', gap: '4px', marginTop: '3px', flexWrap: 'wrap' }}>
                 {getFuelItems(s).map(f => (
@@ -313,7 +348,7 @@ export default function MapView({ stations, selectedFuel, onStationClick, userLa
                 ))}
               </div>
             </Tooltip>
-          </CircleMarker>
+          </Marker>
         )
       })}
 
