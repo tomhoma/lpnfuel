@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 
 const SURVEY_KEY = 'lpnfuel_survey_crowd_v1'
-const DISMISS_KEY = 'lpnfuel_survey_crowd_v1_dismiss'
 const SURVEY_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
 type Vote = 'yes' | 'no'
@@ -11,9 +10,9 @@ export default function SurveyPopup() {
   const [phase, setPhase] = useState<'vote' | 'sending' | 'thanks'>('vote')
 
   useEffect(() => {
+    // Only skip if already VOTED — dismiss just closes for this session
     const alreadyVoted = localStorage.getItem(SURVEY_KEY)
-    const dismissed = localStorage.getItem(DISMISS_KEY)
-    if (alreadyVoted || dismissed) return
+    if (alreadyVoted) return
 
     const timer = setTimeout(() => setShow(true), 2000)
     return () => clearTimeout(timer)
@@ -38,12 +37,11 @@ export default function SurveyPopup() {
       // silent
     }
     setPhase('thanks')
-    // Auto-close after 3s if user doesn't tap
     setTimeout(() => setShow(false), 3000)
   }
 
+  // Dismiss = close this session only, will show again next visit
   const handleDismiss = () => {
-    localStorage.setItem(DISMISS_KEY, 'true')
     setShow(false)
   }
 
@@ -53,12 +51,12 @@ export default function SurveyPopup() {
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={phase === 'vote' ? handleDismiss : undefined} />
       <div
-        className="relative bg-white rounded-2xl w-full max-w-[280px] shadow-2xl animate-slideUp overflow-hidden"
+        className="relative bg-white rounded-2xl w-full max-w-[300px] shadow-2xl animate-slideUp overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* === SENDING STATE === */}
         {phase === 'sending' && (
-          <div className="flex flex-col items-center justify-center py-12 px-6">
+          <div className="flex flex-col items-center justify-center py-16 px-6">
             <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-3" />
             <span className="text-sm text-gray-500">กำลังส่ง...</span>
           </div>
@@ -66,19 +64,22 @@ export default function SurveyPopup() {
 
         {/* === THANK YOU STATE === */}
         {phase === 'thanks' && (
-          <div className="text-center py-8 px-6">
+          <div className="text-center pt-6 pb-8 px-6">
             <img
               src="/logo.png"
               alt="LPN Fuel"
-              className="w-20 h-20 mx-auto mb-3 object-contain drop-shadow"
+              className="w-40 h-40 mx-auto mb-4 object-contain drop-shadow-lg"
             />
-            <div className="text-lg font-bold text-gray-800 mb-1">ขอบคุณครับ! 🎉</div>
-            <div className="text-xs text-gray-500 mb-5">
-              เสียงของคุณมีค่า เราจะนำไปพัฒนาต่อ
+            <div className="text-xl font-bold text-gray-800 mb-2">รับทราบแล้ว!</div>
+            <div className="text-sm text-gray-500 mb-1">
+              ทุกเสียงของชาวลำพูนมีความหมาย
+            </div>
+            <div className="text-xs text-gray-400 mb-5">
+              ติดตามความคืบหน้าได้เร็วๆ นี้
             </div>
             <button
               onClick={() => setShow(false)}
-              className="text-xs text-gray-400 underline"
+              className="px-6 py-2 rounded-full bg-gray-100 text-sm text-gray-600 font-medium active:scale-95 transition"
             >
               ปิด
             </button>
@@ -99,11 +100,11 @@ export default function SurveyPopup() {
             </button>
 
             {/* Cow mascot header */}
-            <div className="bg-gradient-to-b from-green-50 to-white pt-5 pb-3 flex justify-center">
+            <div className="bg-gradient-to-b from-green-50 to-white pt-4 pb-2 flex justify-center">
               <img
                 src="/logo.png"
                 alt="LPN Fuel"
-                className="w-24 h-24 object-contain drop-shadow-lg"
+                className="w-40 h-40 object-contain drop-shadow-lg"
               />
             </div>
 

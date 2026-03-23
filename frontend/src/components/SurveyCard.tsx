@@ -3,13 +3,7 @@ import { useState, useEffect } from 'react'
 const SURVEY_KEY = 'lpnfuel_survey_crowd_v1'
 const SURVEY_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
-type Vote = 'yes' | 'maybe' | 'no'
-
-const OPTIONS: { value: Vote; emoji: string; label: string; color: string }[] = [
-  { value: 'yes', emoji: '🙌', label: 'อยากได้มาก', color: 'bg-green-500' },
-  { value: 'maybe', emoji: '🤔', label: 'น่าสนใจ', color: 'bg-yellow-500' },
-  { value: 'no', emoji: '😐', label: 'ไม่จำเป็น', color: 'bg-gray-400' },
-]
+type Vote = 'yes' | 'no'
 
 export default function SurveyCard() {
   const [voted, setVoted] = useState<Vote | null>(null)
@@ -37,22 +31,21 @@ export default function SurveyCard() {
         }),
       })
     } catch {
-      // silent fail — vote already saved locally
+      // silent
     } finally {
       setSending(false)
     }
   }
 
-  // Already voted — show compact thank you
+  // Already voted — compact confirmation
   if (voted) {
-    const chosen = OPTIONS.find(o => o.value === voted)!
     return (
-      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-4 shadow-sm border border-orange-100">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 shadow-sm border border-green-100">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{chosen.emoji}</span>
+          <span className="text-2xl">✅</span>
           <div className="flex-1">
-            <div className="text-sm font-semibold text-gray-800">ขอบคุณที่โหวต!</div>
-            <div className="text-xs text-gray-500">คุณเลือก "{chosen.label}" — เราจะนำไปพัฒนาต่อ</div>
+            <div className="text-sm font-semibold text-gray-800">รับทราบแล้ว!</div>
+            <div className="text-xs text-gray-500">ติดตามความคืบหน้าได้เร็วๆ นี้</div>
           </div>
           <button
             onClick={() => { localStorage.removeItem(SURVEY_KEY); setVoted(null) }}
@@ -71,26 +64,29 @@ export default function SurveyCard() {
       <div className="flex items-start gap-3 mb-3">
         <span className="text-2xl flex-shrink-0">📢</span>
         <div>
-          <div className="text-sm font-bold text-gray-800">อยากให้เพิ่มฟีเจอร์ "รายงานจากผู้ใช้" ไหม?</div>
+          <div className="text-sm font-bold text-gray-800">อยากให้เพิ่มระบบ "รายงานจากหน้าปั๊ม" ไหม?</div>
           <div className="text-xs text-gray-500 mt-0.5">
-            ให้คนขับรถช่วยรายงานสถานะน้ำมันแบบ real-time
+            ให้ชาวลำพูนช่วยอัปเดตสถานะน้ำมัน แบบเรียลไทม์...
           </div>
         </div>
       </div>
 
-      {/* Vote buttons */}
-      <div className="grid grid-cols-3 gap-2">
-        {OPTIONS.map(opt => (
-          <button
-            key={opt.value}
-            onClick={() => handleVote(opt.value)}
-            disabled={sending}
-            className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-white border border-gray-200 active:scale-95 transition hover:border-orange-300 disabled:opacity-50"
-          >
-            <span className="text-xl">{opt.emoji}</span>
-            <span className="text-[11px] font-medium text-gray-700">{opt.label}</span>
-          </button>
-        ))}
+      {/* 2 Vote buttons */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => handleVote('yes')}
+          disabled={sending}
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-500 text-white font-semibold text-sm active:scale-95 transition disabled:opacity-50"
+        >
+          👍 อยากได้
+        </button>
+        <button
+          onClick={() => handleVote('no')}
+          disabled={sending}
+          className="flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-600 font-semibold text-sm active:scale-95 transition disabled:opacity-50"
+        >
+          ไม่อยากได้
+        </button>
       </div>
     </div>
   )
