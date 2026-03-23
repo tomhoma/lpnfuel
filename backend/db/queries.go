@@ -171,28 +171,31 @@ func GetDistrictSummaries(ctx context.Context) ([]models.DistrictSummary, error)
 	return result, nil
 }
 
-func GetLatestPrices(ctx context.Context) (map[string]map[string]float64, error) {
+func GetLatestPrices(ctx context.Context) (map[string]map[string]map[string]float64, error) {
 	rows, err := Pool.Query(ctx, `
-		SELECT DISTINCT ON (brand, fuel_type) brand, fuel_type, price
+		SELECT DISTINCT ON (district, brand, fuel_type) district, brand, fuel_type, price
 		FROM fuel_prices
-		ORDER BY brand, fuel_type, fetched_at DESC
+		ORDER BY district, brand, fuel_type, fetched_at DESC
 	`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	result := make(map[string]map[string]float64)
+	result := make(map[string]map[string]map[string]float64)
 	for rows.Next() {
-		var brand, fuelType string
+		var district, brand, fuelType string
 		var price float64
-		if err := rows.Scan(&brand, &fuelType, &price); err != nil {
+		if err := rows.Scan(&district, &brand, &fuelType, &price); err != nil {
 			continue
 		}
-		if result[brand] == nil {
-			result[brand] = make(map[string]float64)
+		if result[district] == nil {
+			result[district] = make(map[string]map[string]float64)
 		}
-		result[brand][fuelType] = price
+		if result[district][brand] == nil {
+			result[district][brand] = make(map[string]float64)
+		}
+		result[district][brand][fuelType] = price
 	}
 	return result, nil
 }
@@ -201,17 +204,17 @@ func UpsertFuelPrices(ctx context.Context, prices []models.FuelPrice) error {
 	for _, p := range prices {
 		// Only insert if price changed or no record today
 		_, err := Pool.Exec(ctx, `
-			INSERT INTO fuel_prices (brand, fuel_type, price)
-			SELECT $1, $2, $3
+			INSERT INTO fuel_prices (brand, district, fuel_type, price)
+			SELECT $1, $2, $3, $4
 			WHERE NOT EXISTS (
 				SELECT 1 FROM fuel_prices
-				WHERE brand = $1 AND fuel_type = $2
-				  AND price = $3
+				WHERE brand = $1 AND district = $2 AND fuel_type = $3
+				  AND price = $4
 				  AND fetched_at::date = CURRENT_DATE
 			)
-		`, p.Brand, p.FuelType, p.Price)
+		`, p.Brand, p.District, p.FuelType, p.Price)
 		if err != nil {
-			return fmt.Errorf("insert price %s/%s: %w", p.Brand, p.FuelType, err)
+			return fmt.Errorf("insert price %s/%s/%s: %w", p.Brand, p.District, p.FuelType, err)
 		}
 	}
 	return nil

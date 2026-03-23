@@ -80,7 +80,7 @@ export interface DashboardResponse {
 }
 
 export interface PricesResponse {
-  prices: Record<string, Record<string, number>>
+  prices: Record<string, Record<string, Record<string, number>>>  // district → brand → fuel → price
   date: string
 }
 

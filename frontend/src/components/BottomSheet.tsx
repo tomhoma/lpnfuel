@@ -132,10 +132,10 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
 
           {/* Row 3: fuel grid — evenly spaced */}
           <div className="grid grid-cols-4 gap-1">
-            <FuelBadge label="ดีเซล" value={station.diesel} price={getPrice(prices ?? null, station.brand, 'diesel')} />
-            <FuelBadge label="91" value={station.gas91} price={getPrice(prices ?? null, station.brand, 'gas91')} />
-            <FuelBadge label="95" value={station.gas95} price={getPrice(prices ?? null, station.brand, 'gas95')} />
-            <FuelBadge label="E20" value={station.e20} price={getPrice(prices ?? null, station.brand, 'e20')} />
+            <FuelBadge label="ดีเซล" value={station.diesel} price={getPrice(prices ?? null, station.brand, 'diesel', station.district)} />
+            <FuelBadge label="91" value={station.gas91} price={getPrice(prices ?? null, station.brand, 'gas91', station.district)} />
+            <FuelBadge label="95" value={station.gas95} price={getPrice(prices ?? null, station.brand, 'gas95', station.district)} />
+            <FuelBadge label="E20" value={station.e20} price={getPrice(prices ?? null, station.brand, 'e20', station.district)} />
           </div>
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
