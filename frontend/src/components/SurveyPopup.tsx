@@ -51,7 +51,7 @@ export default function SurveyPopup() {
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={phase === 'vote' ? handleDismiss : undefined} />
       <div
-        className="relative bg-white rounded-2xl w-full max-w-[300px] shadow-2xl animate-slideUp overflow-hidden"
+        className="relative bg-white rounded-2xl w-full max-w-[300px] shadow-2xl animate-popIn overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* === SENDING STATE === */}
