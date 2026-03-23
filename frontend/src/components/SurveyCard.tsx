@@ -73,7 +73,7 @@ export default function SurveyCard() {
         <div>
           <div className="text-sm font-bold text-gray-800">อยากให้เพิ่มฟีเจอร์ "รายงานจากผู้ใช้" ไหม?</div>
           <div className="text-xs text-gray-500 mt-0.5">
-            ให้คนขับรถรายงานสถานะน้ำมันแบบ real-time เช่น "เพิ่งเติมดีเซลได้ที่ปั๊มนี้" หรือ "ไปถึงแล้วน้ำมันหมด"
+            ให้คนขับรถช่วยรายงานสถานะน้ำมันแบบ real-time
           </div>
         </div>
       </div>
