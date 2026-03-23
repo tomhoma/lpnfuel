@@ -121,15 +121,22 @@ function FitBounds({ stations }: { stations: StationWithStatus[] }) {
     }
 
     if (stations.length !== prevCount.current) {
-      // Filter เปลี่ยน: เช็คว่ามีปั๊มใน viewport ปัจจุบันไหม
+      const MIN_VISIBLE = 3
       const currentBounds = map.getBounds()
       const visibleStations = points.filter(s => currentBounds.contains(L.latLng(s.lat!, s.lng!)))
 
-      if (visibleStations.length === 0) {
-        // ไม่มีปั๊มใน view ปัจจุบัน → zoom ไปหาปั๊มที่ตรง filter
-        map.flyToBounds(bounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
+      if (visibleStations.length < MIN_VISIBLE) {
+        // ปั๊มใน view น้อยกว่า 3 → ค่อยๆ zoom out ให้เห็นอย่างน้อย 3 ปั๊ม
+        // หาจุดที่ใกล้ศูนย์กลาง map มากสุด 3 ปั๊ม แล้ว fit bounds
+        const center = map.getCenter()
+        const sorted = [...points].sort((a, b) =>
+          center.distanceTo(L.latLng(a.lat!, a.lng!)) - center.distanceTo(L.latLng(b.lat!, b.lng!))
+        )
+        const nearest = sorted.slice(0, Math.min(MIN_VISIBLE, sorted.length))
+        const nearBounds = L.latLngBounds(nearest.map(s => L.latLng(s.lat!, s.lng!)))
+        map.flyToBounds(nearBounds, { ...fitOpts, maxZoom: 13, duration: 0.5 })
       }
-      // มีปั๊มอยู่แล้ว → ไม่ต้อง zoom ให้ user ดูในมุมเดิม
+      // มีปั๊ม >= 3 อยู่แล้ว → ไม่ต้อง zoom ให้ user ดูในมุมเดิม
 
       prevCount.current = stations.length
     }
