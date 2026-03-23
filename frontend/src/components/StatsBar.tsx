@@ -64,12 +64,11 @@ export default function StatsBar({ summary, stations, prices }: StatsBarProps) {
     >
       <div className="bg-gray-900/80 backdrop-blur-md rounded-xl px-3 py-1.5 shadow-lg overflow-hidden">
         <div className="inline-flex whitespace-nowrap animate-ticker will-change-transform">
-          <span className="inline-flex items-center text-[13px] pr-8">
-            {renderItems()}
-          </span>
-          <span className="inline-flex items-center text-[13px] pr-8" aria-hidden="true">
-            {renderItems()}
-          </span>
+          {[0, 1, 2, 3].map(i => (
+            <span key={i} className="inline-flex items-center text-[13px] pr-8" aria-hidden={i > 0 || undefined}>
+              {renderItems()}
+            </span>
+          ))}
         </div>
       </div>
     </Link>
