@@ -13,7 +13,6 @@ RUN apk add --no-cache tzdata ca-certificates
 WORKDIR /app
 COPY --from=builder /app/lpnfuel .
 COPY db/migrations/ db/migrations/
-COPY data/ data/
 
 EXPOSE 8080
 CMD ["./lpnfuel"]
