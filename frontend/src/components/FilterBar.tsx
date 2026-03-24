@@ -73,7 +73,7 @@ export default function FilterBar({ selectedFuel, onFuelSelect }: FilterBarProps
             {/* Level + points */}
             <div className="text-center">
               <div className="text-4xl mb-1">{levelIcon}</div>
-              <div className="text-sm font-bold text-gray-800">{profile?.level.title || 'มือใหม่หัดเติม'}</div>
+              <div className="text-sm font-bold text-gray-800">{profile?.level.title || 'ละอ่อนลำไย'}</div>
               <div className="text-xs text-gray-400 mt-1">
                 {profile?.totalPoints ?? 0} แต้ม
                 {profile?.nextLevel && profile.pointsToNext != null && (
