@@ -10,9 +10,10 @@ interface BottomSheetProps {
   station: StationWithStatus | null
   onClose: () => void
   prices?: PricesResponse | null
+  onReported?: () => void
 }
 
-export default function BottomSheet({ station, onClose, prices }: BottomSheetProps) {
+export default function BottomSheet({ station, onClose, prices, onReported }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const [showGeoReport, setShowGeoReport] = useState(false)
   const [geoDetail, setGeoDetail] = useState('')
@@ -226,6 +227,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
           stationBrand={station.brand}
           currentStatuses={reportStatuses}
           onClose={() => setShowReportModal(false)}
+          onReported={onReported}
         />
       )}
     </div>

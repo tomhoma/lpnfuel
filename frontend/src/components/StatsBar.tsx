@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
@@ -33,21 +33,31 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)} วันที่แล้ว`
 }
 
-export default function StatsBar() {
+interface StatsBarProps {
+  refreshTrigger?: number
+}
+
+export default function StatsBar({ refreshTrigger }: StatsBarProps) {
   const [reports, setReports] = useState<ReportItem[]>([])
 
-  // Fetch recent global reports
+  const fetchReports = useCallback(() => {
+    fetch(`${API_URL}/reports?limit=20`)
+      .then(r => r.json())
+      .then(d => setReports(d.reports || []))
+      .catch(() => {})
+  }, [])
+
+  // Fetch on mount + interval
   useEffect(() => {
-    const fetchReports = () => {
-      fetch(`${API_URL}/reports?limit=20`)
-        .then(r => r.json())
-        .then(d => setReports(d.reports || []))
-        .catch(() => {})
-    }
     fetchReports()
     const interval = setInterval(fetchReports, 3 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchReports])
+
+  // Re-fetch when refreshTrigger changes (after report submitted)
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) fetchReports()
+  }, [refreshTrigger, fetchReports])
 
   const tickerEntries = useMemo(() => {
     const entries: TickerEntry[] = []

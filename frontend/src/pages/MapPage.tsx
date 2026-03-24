@@ -24,7 +24,7 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
 }
 
 export default function MapPage() {
-  const { data, loading, error, lastUpdated, dataVersion, justRefreshed } = useStations()
+  const { data, loading, error, lastUpdated, dataVersion, justRefreshed, refresh } = useStations()
   const prices = usePrices()
   const latestReportAt = useLatestReport()
   const geo = useGeolocation()
@@ -84,9 +84,16 @@ export default function MapPage() {
     })
   }, [data, statusFilter, brandFilter, fuelFilter, districtFilter, geo.lat, geo.lng])
 
+  const [reportCount, setReportCount] = useState(0)
+
   const handleStationClick = useCallback((station: StationWithStatus) => {
     setSelectedStation(station)
   }, [])
+
+  const handleReported = useCallback(() => {
+    refresh()
+    setReportCount(c => c + 1)
+  }, [refresh])
 
   if (loading || !splashDone) {
     return (
@@ -176,11 +183,11 @@ export default function MapPage() {
         </div>
 
         {/* Floating stats overlay */}
-        <StatsBar />
+        <StatsBar refreshTrigger={reportCount} />
       </div>
 
       {/* Bottom sheet */}
-      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} prices={prices} />
+      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} prices={prices} onReported={handleReported} />
 
       {/* Survey popup — shows once after splash */}
       <SurveyPopup />

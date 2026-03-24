@@ -14,6 +14,7 @@ interface Props {
   stationBrand: string
   currentStatuses: Record<string, string | null>  // fuelId → 'available'|'empty'|'unknown'|null
   onClose: () => void
+  onReported?: () => void  // callback to refresh data after successful report
 }
 
 const BRAND_FUELS: Record<string, string[]> = {
@@ -51,7 +52,7 @@ const STATUS_CONFIG = [
   { value: 'unknown' as const, label: 'กำลังลง', emoji: '🔄', color: 'bg-blue-100 text-blue-700' },
 ]
 
-export default function FuelReportForm({ stationId, stationName, stationBrand, currentStatuses, onClose }: Props) {
+export default function FuelReportForm({ stationId, stationName, stationBrand, currentStatuses, onClose, onReported }: Props) {
   const { reporterId, nickname, setNickname, profile, refreshProfile } = useReporter()
 
   // Pre-fill with current statuses
@@ -132,6 +133,7 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
         }
         setResult({ ok: true, message: msg })
         refreshProfile()
+        onReported?.()
         setTimeout(() => onClose(), 2000)
       } else {
         setResult({ ok: false, message: 'ไม่สามารถส่งได้ กรุณาลองใหม่' })
