@@ -101,7 +101,7 @@ export default function StatsBar() {
     }
 
     return entries
-  }, [reports, stations])
+  }, [reports])
 
   // Need enough copies to fill the seamless loop
   const copies = 4
