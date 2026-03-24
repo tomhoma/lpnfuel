@@ -317,6 +317,74 @@ func GetFuelTypeCatalog(ctx context.Context) ([]models.FuelTypeCatalog, error) {
 	return result, nil
 }
 
+// CommunityOverride represents a community report override for a GAS fuel category
+type CommunityOverride struct {
+	StationID   string
+	GasCategory string // "diesel", "gas95", "gas91", "e20"
+	Status      string // "available" or "empty"
+}
+
+// GetTodayReportOverrides returns the latest community report per station per GAS category
+// for today (after 1AM ICT reset). Returns map[stationID]map[gasCategory]string ("มี"/"หมด")
+func GetTodayReportOverrides(ctx context.Context) (map[string]map[string]string, error) {
+	ict, _ := time.LoadLocation("Asia/Bangkok")
+	now := time.Now().In(ict)
+
+	// Reset at 1AM ICT (same as frontend getTodayResetTime)
+	resetTime := time.Date(now.Year(), now.Month(), now.Day(), 1, 0, 0, 0, ict)
+	if now.Before(resetTime) {
+		resetTime = resetTime.AddDate(0, 0, -1)
+	}
+
+	rows, err := Pool.Query(ctx, `
+		SELECT DISTINCT ON (station_id, gas_category)
+			station_id,
+			CASE
+				WHEN fuel_type IN ('diesel_b7','diesel_b10','diesel_b20','diesel_premium') THEN 'diesel'
+				WHEN fuel_type IN ('gsh95','spg95','bzn95') THEN 'gas95'
+				WHEN fuel_type = 'gsh91' THEN 'gas91'
+				WHEN fuel_type IN ('e20','e85') THEN 'e20'
+				ELSE NULL
+			END as gas_category,
+			status
+		FROM fuel_reports
+		WHERE created_at >= $1
+		  AND CASE
+			WHEN fuel_type IN ('diesel_b7','diesel_b10','diesel_b20','diesel_premium') THEN 'diesel'
+			WHEN fuel_type IN ('gsh95','spg95','bzn95') THEN 'gas95'
+			WHEN fuel_type = 'gsh91' THEN 'gas91'
+			WHEN fuel_type IN ('e20','e85') THEN 'e20'
+			ELSE NULL
+		  END IS NOT NULL
+		ORDER BY station_id, gas_category, created_at DESC
+	`, resetTime.UTC())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]map[string]string)
+	for rows.Next() {
+		var stationID, gasCategory, status string
+		if err := rows.Scan(&stationID, &gasCategory, &status); err != nil {
+			continue
+		}
+		// Convert report status → Thai GAS status
+		thaiStatus := "-"
+		switch status {
+		case "available":
+			thaiStatus = "มี"
+		case "empty":
+			thaiStatus = "หมด"
+		}
+		if result[stationID] == nil {
+			result[stationID] = make(map[string]string)
+		}
+		result[stationID][gasCategory] = thaiStatus
+	}
+	return result, nil
+}
+
 // GetLatestReportTime returns the most recent fuel report time globally
 func GetLatestReportTime(ctx context.Context) *time.Time {
 	var t *time.Time

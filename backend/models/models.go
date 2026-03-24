@@ -30,7 +30,8 @@ type FuelStatus struct {
 type StationWithStatus struct {
 	Station
 	FuelStatus
-	DistanceKm *float64 `json:"distance_km,omitempty"`
+	DistanceKm      *float64        `json:"distance_km,omitempty"`
+	CommunitySource map[string]bool `json:"community_source,omitempty"` // which GAS fields came from community reports
 }
 
 type FuelPrice struct {

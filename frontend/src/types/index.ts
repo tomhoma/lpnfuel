@@ -25,6 +25,7 @@ export interface FuelStatus {
 
 export interface StationWithStatus extends Station, FuelStatus {
   distance_km?: number
+  community_source?: Record<string, boolean>  // which GAS fields came from community reports
 }
 
 export interface OverallSummary {

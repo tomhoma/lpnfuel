@@ -44,6 +44,14 @@ func handleStations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Apply community report overrides (today's reports override GAS data)
+	overrides, err := db.GetTodayReportOverrides(ctx)
+	if err != nil {
+		log.Printf("community overrides error: %v", err)
+	} else {
+		applyCommunityOverrides(stations, overrides)
+	}
+
 	q := r.URL.Query()
 	brand := q.Get("brand")
 	district := q.Get("district")
@@ -76,12 +84,24 @@ func handleStations(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleStationByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	id := r.PathValue("id")
-	station, history, err := db.GetStationWithHistory(r.Context(), id)
+	station, history, err := db.GetStationWithHistory(ctx, id)
 	if err != nil {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": "station not found"})
 		return
 	}
+
+	// Apply community report overrides for this station
+	overrides, err := db.GetTodayReportOverrides(ctx)
+	if err != nil {
+		log.Printf("community overrides error: %v", err)
+	} else {
+		stations := []models.StationWithStatus{*station}
+		applyCommunityOverrides(stations, overrides)
+		*station = stations[0]
+	}
+
 	writeJSON(w, http.StatusOK, map[string]any{
 		"station":    station,
 		"history_7d": history,
@@ -109,6 +129,14 @@ func handleNearest(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return
+	}
+
+	// Apply community report overrides
+	overrides, err := db.GetTodayReportOverrides(ctx)
+	if err != nil {
+		log.Printf("community overrides error: %v", err)
+	} else {
+		applyCommunityOverrides(stations, overrides)
 	}
 
 	var candidates []models.StationWithStatus
@@ -271,6 +299,37 @@ func handleUpdateGeo(w http.ResponseWriter, r *http.Request) {
 		"lat":    body.Lat,
 		"lng":    body.Lng,
 	})
+}
+
+// applyCommunityOverrides merges today's community reports into station fuel status.
+// Community reports take priority over GAS data.
+func applyCommunityOverrides(stations []models.StationWithStatus, overrides map[string]map[string]string) {
+	for i := range stations {
+		so, ok := overrides[stations[i].Station.ID]
+		if !ok {
+			continue
+		}
+		cs := make(map[string]bool)
+		if v, has := so["gas95"]; has {
+			stations[i].FuelStatus.Gas95 = v
+			cs["gas95"] = true
+		}
+		if v, has := so["gas91"]; has {
+			stations[i].FuelStatus.Gas91 = v
+			cs["gas91"] = true
+		}
+		if v, has := so["e20"]; has {
+			stations[i].FuelStatus.E20 = v
+			cs["e20"] = true
+		}
+		if v, has := so["diesel"]; has {
+			stations[i].FuelStatus.Diesel = v
+			cs["diesel"] = true
+		}
+		if len(cs) > 0 {
+			stations[i].CommunitySource = cs
+		}
+	}
 }
 
 func normalizeBrand(brand string) string {
