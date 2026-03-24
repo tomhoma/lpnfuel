@@ -41,7 +41,7 @@ export default function StatsBar({ refreshTrigger }: StatsBarProps) {
   const [reports, setReports] = useState<ReportItem[]>([])
 
   const fetchReports = useCallback(() => {
-    fetch(`${API_URL}/reports?limit=20`)
+    fetch(`${API_URL}/reports?limit=10`)
       .then(r => r.json())
       .then(d => setReports(d.reports || []))
       .catch(() => {})
