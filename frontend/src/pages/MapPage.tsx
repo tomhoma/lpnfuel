@@ -117,8 +117,6 @@ export default function MapPage() {
     )
   }
 
-  const summary = data?.summary ?? { total: 0, with_fuel: 0, all_empty: 0, diesel_crisis: false, diesel_count: 0 }
-
   const reportTime = latestReportAt
     ? new Date(latestReportAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
     : null
@@ -179,7 +177,7 @@ export default function MapPage() {
         </div>
 
         {/* Floating stats overlay */}
-        <StatsBar summary={summary} stations={data?.stations || []} />
+        <StatsBar stations={data?.stations || []} />
       </div>
 
       {/* Bottom sheet */}
