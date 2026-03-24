@@ -336,27 +336,27 @@ func GetTodayReportOverrides(ctx context.Context) (map[string]map[string]string,
 		resetTime = resetTime.AddDate(0, 0, -1)
 	}
 
+	// Step 1: Get latest report per station per fuel_type (granular)
+	// Step 2: Group by gas_category — if ANY fuel in group = available → group = มี
 	rows, err := Pool.Query(ctx, `
-		SELECT DISTINCT ON (station_id, gas_category)
-			station_id,
-			CASE
-				WHEN fuel_type IN ('diesel_b7','diesel_b10','diesel_b20','diesel_premium') THEN 'diesel'
-				WHEN fuel_type IN ('gsh95','spg95','bzn95') THEN 'gas95'
-				WHEN fuel_type = 'gsh91' THEN 'gas91'
-				WHEN fuel_type IN ('e20','e85') THEN 'e20'
-				ELSE NULL
-			END as gas_category,
-			status
-		FROM fuel_reports
-		WHERE created_at >= $1
-		  AND CASE
-			WHEN fuel_type IN ('diesel_b7','diesel_b10','diesel_b20','diesel_premium') THEN 'diesel'
-			WHEN fuel_type IN ('gsh95','spg95','bzn95') THEN 'gas95'
-			WHEN fuel_type = 'gsh91' THEN 'gas91'
-			WHEN fuel_type IN ('e20','e85') THEN 'e20'
-			ELSE NULL
-		  END IS NOT NULL
-		ORDER BY station_id, gas_category, created_at DESC
+		WITH latest_per_fuel AS (
+			SELECT DISTINCT ON (station_id, fuel_type)
+				station_id, fuel_type, status,
+				CASE
+					WHEN fuel_type IN ('diesel_b7','diesel_b10','diesel_b20','diesel_premium') THEN 'diesel'
+					WHEN fuel_type IN ('gsh95','spg95','bzn95') THEN 'gas95'
+					WHEN fuel_type = 'gsh91' THEN 'gas91'
+					WHEN fuel_type IN ('e20','e85') THEN 'e20'
+				END as gas_category
+			FROM fuel_reports
+			WHERE created_at >= $1
+			ORDER BY station_id, fuel_type, created_at DESC
+		)
+		SELECT station_id, gas_category,
+			CASE WHEN bool_or(status = 'available') THEN 'available' ELSE 'empty' END as status
+		FROM latest_per_fuel
+		WHERE gas_category IS NOT NULL
+		GROUP BY station_id, gas_category
 	`, resetTime.UTC())
 	if err != nil {
 		return nil, err
