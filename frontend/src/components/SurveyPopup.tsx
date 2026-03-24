@@ -4,14 +4,12 @@ export default function SurveyPopup() {
   const [show, setShow] = useState(false)
 
   useEffect(() => {
-    // Show after splash screen finishes (1.5s delay)
     const showTimer = setTimeout(() => setShow(true), 1500)
     return () => clearTimeout(showTimer)
   }, [])
 
   useEffect(() => {
     if (!show) return
-    // Auto-dismiss after 5 seconds
     const dismissTimer = setTimeout(() => setShow(false), 5000)
     return () => clearTimeout(dismissTimer)
   }, [show])
@@ -19,39 +17,46 @@ export default function SurveyPopup() {
   if (!show) return null
 
   return (
-    <div
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] w-[calc(100%-48px)] max-w-sm animate-popIn"
-      onClick={() => setShow(false)}
-    >
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-4 py-4 flex items-center gap-3 border border-gray-100">
-        {/* Logo */}
-        <img src="/logo.png" alt="LPN Fuel" className="w-10 h-10 object-contain flex-shrink-0 drop-shadow" />
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-8" onClick={() => setShow(false)}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/30" />
 
-        {/* Text */}
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-bold text-gray-800 leading-tight">
-            ชาวลำพูนช่วยกันอัพเดท!
-          </div>
-          <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">
-            กดรายงานสถานะน้ำมัน ยิ่งอัพเดทเยอะ ข้อมูลยิ่งแม่นยำ 💪
-          </div>
-        </div>
-
+      {/* Card */}
+      <div
+        className="relative bg-white rounded-2xl shadow-2xl w-full max-w-[280px] overflow-hidden animate-popIn"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Close */}
         <button
-          onClick={(e) => { e.stopPropagation(); setShow(false) }}
-          className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center"
+          onClick={() => setShow(false)}
+          className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center z-10"
         >
-          <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
-      </div>
 
-      {/* Auto-dismiss progress bar */}
-      <div className="mx-4 mt-1">
-        <div className="h-0.5 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-green-400 rounded-full animate-shrinkBar" />
+        {/* Logo */}
+        <div className="bg-gradient-to-b from-green-50 to-white pt-5 pb-2 flex justify-center">
+          <img src="/logo.png" alt="LPN Fuel" className="w-24 h-24 object-contain drop-shadow-lg" />
+        </div>
+
+        {/* Text */}
+        <div className="text-center px-5 pb-4">
+          <div className="text-[15px] font-bold text-gray-800 leading-snug">
+            ชาวลำพูนช่วยกันอัพเดท!
+          </div>
+          <div className="text-xs text-gray-500 mt-1.5 leading-relaxed">
+            กดรายงานสถานะน้ำมัน<br />
+            ยิ่งอัพเดทเยอะ ข้อมูลยิ่งแม่นยำ 💪
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="px-5 pb-4">
+          <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-green-400 rounded-full animate-shrinkBar" />
+          </div>
         </div>
       </div>
     </div>
