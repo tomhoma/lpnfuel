@@ -103,7 +103,7 @@ export default function FilterBar({ selectedFuel, onFuelSelect }: FilterBarProps
                 placeholder="ตั้งชื่อเล่น"
                 maxLength={20}
                 className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-                autoFocus
+                autoFocus={false}
               />
               <p className="text-[10px] text-gray-300 mt-1">สูงสุด 20 ตัวอักษร · แสดงใน ticker ด้านล่าง</p>
             </div>
