@@ -303,3 +303,118 @@ func computeSummary(stations []models.StationWithStatus) models.OverallSummary {
 	return s
 }
 
+const maxReportDistanceKm = 3.0
+const reportRateLimitWindow = 15 * time.Minute
+
+var validStatuses = map[string]bool{"available": true, "empty": true, "unknown": true}
+
+func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	stationID := r.PathValue("id")
+
+	var req models.SubmitReportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	if len(req.Reports) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no reports provided"})
+		return
+	}
+	if req.Lat == 0 && req.Lng == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "lat and lng required"})
+		return
+	}
+
+	// Get station to check distance
+	station, _, err := db.GetStationWithHistory(ctx, stationID)
+	if err != nil || station == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "station not found"})
+		return
+	}
+
+	// Check GPS proximity
+	var distKm float64
+	if station.Lat != nil && station.Lng != nil {
+		distKm = geo.Haversine(req.Lat, req.Lng, *station.Lat, *station.Lng)
+		if distKm > maxReportDistanceKm {
+			writeJSON(w, http.StatusForbidden, map[string]any{
+				"error":       "too far from station",
+				"distance_km": distKm,
+				"max_km":      maxReportDistanceKm,
+			})
+			return
+		}
+	}
+
+	accepted := 0
+	rateLimited := 0
+	for _, rpt := range req.Reports {
+		if !validStatuses[rpt.Status] {
+			continue
+		}
+
+		limited, err := db.CheckReportRateLimit(ctx, stationID, rpt.FuelType, reportRateLimitWindow)
+		if err != nil {
+			log.Printf("rate limit check error: %v", err)
+			continue
+		}
+		if limited {
+			rateLimited++
+			continue
+		}
+
+		report := models.FuelReport{
+			StationID:   stationID,
+			FuelType:    rpt.FuelType,
+			Status:      rpt.Status,
+			ReporterLat: &req.Lat,
+			ReporterLng: &req.Lng,
+			DistanceKm:  &distKm,
+		}
+
+		if _, err := db.InsertFuelReport(ctx, report); err != nil {
+			log.Printf("insert report error: %v", err)
+			continue
+		}
+		accepted++
+	}
+
+	status := http.StatusOK
+	if accepted == 0 && rateLimited > 0 {
+		status = http.StatusTooManyRequests
+	}
+
+	writeJSON(w, status, map[string]any{
+		"status":       "ok",
+		"accepted":     accepted,
+		"rate_limited": rateLimited,
+	})
+}
+
+func handleGetReports(w http.ResponseWriter, r *http.Request) {
+	stationID := r.PathValue("id")
+	limit := 20
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+
+	reports, err := db.GetRecentReports(r.Context(), stationID, limit)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reports": reports})
+}
+
+func handleFuelTypes(w http.ResponseWriter, r *http.Request) {
+	catalog, err := db.GetFuelTypeCatalog(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"fuel_types": catalog})
+}
+
+
