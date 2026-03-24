@@ -129,62 +129,6 @@ func handleNearest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"stations": candidates})
 }
 
-func handleDashboard(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	stations, err := db.GetAllStationsWithStatus(ctx)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-
-	summary := computeSummary(stations)
-
-	byDistrict, _ := db.GetDistrictSummaries(ctx)
-
-	// Brand summary
-	brandMap := map[string]*models.BrandSummary{}
-	for _, s := range stations {
-		bs := brandMap[s.Brand]
-		if bs == nil {
-			bs = &models.BrandSummary{Brand: s.Brand}
-			brandMap[s.Brand] = bs
-		}
-		bs.Total++
-		if hasFuel(s.FuelStatus) {
-			bs.WithFuel++
-		}
-	}
-	var byBrand []models.BrandSummary
-	for _, bs := range brandMap {
-		if bs.Total > 0 {
-			bs.AvailableRate = float64(bs.WithFuel) / float64(bs.Total) * 100
-		}
-		byBrand = append(byBrand, *bs)
-	}
-	sort.Slice(byBrand, func(i, j int) bool {
-		return byBrand[i].AvailableRate > byBrand[j].AvailableRate
-	})
-
-	// Incoming supply
-	var incoming []models.StationWithStatus
-	for _, s := range stations {
-		if s.TransportStatus == "กำลังจัดส่ง" || s.TransportStatus == "กำลังลงน้ำมัน" {
-			incoming = append(incoming, s)
-		}
-	}
-
-	trend, _ := db.GetTrend7d(ctx)
-
-	writeJSON(w, http.StatusOK, models.DashboardResponse{
-		Overall:        summary,
-		ByDistrict:     byDistrict,
-		ByBrand:        byBrand,
-		IncomingSupply: incoming,
-		Trend7d:        trend,
-		UpdatedAt:      db.GetLastFetchTime(ctx),
-	})
-}
-
 func handlePrices(w http.ResponseWriter, r *http.Request) {
 	prices, err := db.GetLatestPrices(r.Context())
 	if err != nil {
@@ -268,11 +212,8 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		_ = db.InsertHistory(ctx, fs)
 		updated++
 	}
-
-	_ = db.RefreshDistrictSummary(ctx)
 
 	log.Printf("Ingest: %d stations updated", updated)
 	writeJSON(w, http.StatusOK, map[string]any{
@@ -361,4 +302,131 @@ func computeSummary(stations []models.StationWithStatus) models.OverallSummary {
 	s.DieselCrisis = s.Total > 0 && float64(s.DieselCount)/float64(s.Total) < 0.2
 	return s
 }
+
+const maxReportDistanceKm = 3.0
+const reportRateLimitWindow = 3 * time.Minute
+
+var validStatuses = map[string]bool{"available": true, "empty": true, "unknown": true}
+
+func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	stationID := r.PathValue("id")
+
+	var req models.SubmitReportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid JSON"})
+		return
+	}
+
+	if len(req.Reports) == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "no reports provided"})
+		return
+	}
+	if req.Lat == 0 && req.Lng == 0 {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "lat and lng required"})
+		return
+	}
+
+	// Get station to check distance
+	station, _, err := db.GetStationWithHistory(ctx, stationID)
+	if err != nil || station == nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "station not found"})
+		return
+	}
+
+	// Check GPS proximity
+	var distKm float64
+	if station.Lat != nil && station.Lng != nil {
+		distKm = geo.Haversine(req.Lat, req.Lng, *station.Lat, *station.Lng)
+		if distKm > maxReportDistanceKm {
+			writeJSON(w, http.StatusForbidden, map[string]any{
+				"error":       "too far from station",
+				"distance_km": distKm,
+				"max_km":      maxReportDistanceKm,
+			})
+			return
+		}
+	}
+
+	accepted := 0
+	rateLimited := 0
+	var retryAfterSec int
+	for _, rpt := range req.Reports {
+		if !validStatuses[rpt.Status] {
+			continue
+		}
+
+		lastReport, err := db.CheckReportRateLimit(ctx, stationID, rpt.FuelType, reportRateLimitWindow)
+		if err != nil {
+			log.Printf("rate limit check error: %v", err)
+			continue
+		}
+		if lastReport != nil {
+			elapsed := time.Since(*lastReport)
+			remaining := reportRateLimitWindow - elapsed
+			if remaining > 0 {
+				secs := int(remaining.Seconds()) + 1
+				if secs > retryAfterSec {
+					retryAfterSec = secs
+				}
+				rateLimited++
+				continue
+			}
+		}
+
+		report := models.FuelReport{
+			StationID:   stationID,
+			FuelType:    rpt.FuelType,
+			Status:      rpt.Status,
+			ReporterLat: &req.Lat,
+			ReporterLng: &req.Lng,
+			DistanceKm:  &distKm,
+		}
+
+		if _, err := db.InsertFuelReport(ctx, report); err != nil {
+			log.Printf("insert report error: %v", err)
+			continue
+		}
+		accepted++
+	}
+
+	status := http.StatusOK
+	resp := map[string]any{
+		"status":       "ok",
+		"accepted":     accepted,
+		"rate_limited": rateLimited,
+	}
+	if accepted == 0 && rateLimited > 0 {
+		status = http.StatusTooManyRequests
+		resp["error"] = "พึ่งอัพเดทไปเมื่อสักครู่ กรุณารออีกสักครู่"
+		resp["retry_after_seconds"] = retryAfterSec
+	}
+
+	writeJSON(w, status, resp)
+}
+
+func handleGetReports(w http.ResponseWriter, r *http.Request) {
+	stationID := r.PathValue("id")
+	limit := 20
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 100 {
+		limit = l
+	}
+
+	reports, err := db.GetRecentReports(r.Context(), stationID, limit)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reports": reports})
+}
+
+func handleFuelTypes(w http.ResponseWriter, r *http.Request) {
+	catalog, err := db.GetFuelTypeCatalog(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"fuel_types": catalog})
+}
+
 

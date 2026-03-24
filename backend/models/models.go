@@ -119,3 +119,33 @@ type HealthResponse struct {
 	LastFetch    time.Time `json:"last_fetch"`
 	StationCount int       `json:"station_count"`
 }
+
+type FuelTypeCatalog struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Group string `json:"group"`
+	Sort  int    `json:"sort"`
+}
+
+type FuelReport struct {
+	ID          int64      `json:"id"`
+	StationID   string     `json:"station_id"`
+	FuelType    string     `json:"fuel_type"`
+	Status      string     `json:"status"`
+	ReporterLat *float64   `json:"reporter_lat,omitempty"`
+	ReporterLng *float64   `json:"reporter_lng,omitempty"`
+	DistanceKm  *float64   `json:"distance_km,omitempty"`
+	Note        string     `json:"note,omitempty"`
+	CreatedAt   time.Time  `json:"created_at"`
+}
+
+type FuelReportInput struct {
+	FuelType string `json:"fuel_type"`
+	Status   string `json:"status"`
+}
+
+type SubmitReportRequest struct {
+	Reports []FuelReportInput `json:"reports"`
+	Lat     float64           `json:"lat"`
+	Lng     float64           `json:"lng"`
+}

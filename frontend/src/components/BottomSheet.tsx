@@ -1,20 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import type { StationWithStatus, PricesResponse } from '../types'
-import FuelBadge from './FuelBadge'
+import type { StationWithStatus } from '../types'
 import TransportBadge from './TransportBadge'
-import StationHistory from './StationHistory'
+import FuelReportForm from './FuelReportForm'
 import { formatDistance } from '../hooks/useDistance'
-import { getPrice } from '../hooks/usePriceLookup'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
 
 interface BottomSheetProps {
   station: StationWithStatus | null
   onClose: () => void
-  prices?: PricesResponse | null
 }
 
-export default function BottomSheet({ station, onClose, prices }: BottomSheetProps) {
+export default function BottomSheet({ station, onClose }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const [showGeoReport, setShowGeoReport] = useState(false)
   const [geoDetail, setGeoDetail] = useState('')
@@ -130,19 +127,12 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
             <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
-          {/* Row 3: fuel grid — evenly spaced */}
-          <div className="grid grid-cols-4 gap-1">
-            <FuelBadge label="ดีเซล" value={station.diesel} price={getPrice(prices ?? null, station.brand, 'diesel', station.district)} />
-            <FuelBadge label="91" value={station.gas91} price={getPrice(prices ?? null, station.brand, 'gas91', station.district)} />
-            <FuelBadge label="95" value={station.gas95} price={getPrice(prices ?? null, station.brand, 'gas95', station.district)} />
-            <FuelBadge label="E20" value={station.e20} price={getPrice(prices ?? null, station.brand, 'e20', station.district)} />
-          </div>
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
 
-          {/* 24h History Timeline */}
-          <StationHistory stationId={station.id} />
+          {/* Fuel status report */}
+          <FuelReportForm stationId={station.id} stationBrand={station.brand} />
 
           {/* Row: updated + navigate button */}
           <div className="flex items-center gap-2">

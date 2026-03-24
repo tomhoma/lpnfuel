@@ -40,18 +40,6 @@ func UpsertFuelStatus(ctx context.Context, fs models.FuelStatus) error {
 	return err
 }
 
-func InsertHistory(ctx context.Context, fs models.FuelStatus) error {
-	_, err := Pool.Exec(ctx, `
-		INSERT INTO fuel_history (station_id, gas95, gas91, e20, diesel, transport_status)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, fs.StationID, fs.Gas95, fs.Gas91, fs.E20, fs.Diesel, fs.TransportStatus)
-	return err
-}
-
-func RefreshDistrictSummary(ctx context.Context) error {
-	_, err := Pool.Exec(ctx, `REFRESH MATERIALIZED VIEW district_summary`)
-	return err
-}
 
 func GetAllStationsWithStatus(ctx context.Context) ([]models.StationWithStatus, error) {
 	rows, err := Pool.Query(ctx, `
@@ -144,32 +132,6 @@ func GetStationWithHistory(ctx context.Context, id string) (*models.StationWithS
 	return &sw, history, nil
 }
 
-func GetDistrictSummaries(ctx context.Context) ([]models.DistrictSummary, error) {
-	rows, err := Pool.Query(ctx, `
-		SELECT district, total_stations, stations_with_fuel, stations_all_empty,
-		       diesel_available, gas91_available, incoming_supply
-		FROM district_summary
-		ORDER BY total_stations DESC
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var result []models.DistrictSummary
-	for rows.Next() {
-		var ds models.DistrictSummary
-		err := rows.Scan(
-			&ds.District, &ds.TotalStations, &ds.WithFuel, &ds.AllEmpty,
-			&ds.DieselAvailable, &ds.Gas91Available, &ds.IncomingSupply,
-		)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, ds)
-	}
-	return result, nil
-}
 
 func GetLatestPrices(ctx context.Context) (map[string]map[string]map[string]float64, error) {
 	rows, err := Pool.Query(ctx, `
@@ -232,48 +194,81 @@ func GetLastFetchTime(ctx context.Context) time.Time {
 	return t
 }
 
-func GetTrend7d(ctx context.Context) (models.TrendData, error) {
-	rows, err := Pool.Query(ctx, `
-		SELECT
-			DATE_TRUNC('hour', recorded_at) as hour,
-			COUNT(*) as total,
-			COUNT(*) FILTER (WHERE gas95 = 'มี') as gas95_available,
-			COUNT(*) FILTER (WHERE gas91 = 'มี') as gas91_available,
-			COUNT(*) FILTER (WHERE e20 = 'มี') as e20_available,
-			COUNT(*) FILTER (WHERE diesel = 'มี') as diesel_available
-		FROM fuel_history
-		WHERE recorded_at > now() - INTERVAL '7 days'
-		GROUP BY hour
-		ORDER BY hour
-	`)
-	if err != nil {
-		return models.TrendData{}, err
-	}
-	defer rows.Close()
-
-	var trend models.TrendData
-	for rows.Next() {
-		var hour time.Time
-		var total, gas95, gas91, e20, diesel int
-		if err := rows.Scan(&hour, &total, &gas95, &gas91, &e20, &diesel); err != nil {
-			continue
-		}
-		if total == 0 {
-			continue
-		}
-		dateStr := hour.Format("2006-01-02 15:04")
-		pct := func(n int) float64 { return float64(n) / float64(total) * 100 }
-		trend.Gas95 = append(trend.Gas95, models.TrendPoint{Date: dateStr, Percent: pct(gas95)})
-		trend.Gas91 = append(trend.Gas91, models.TrendPoint{Date: dateStr, Percent: pct(gas91)})
-		trend.E20 = append(trend.E20, models.TrendPoint{Date: dateStr, Percent: pct(e20)})
-		trend.Diesel = append(trend.Diesel, models.TrendPoint{Date: dateStr, Percent: pct(diesel)})
-	}
-	return trend, nil
-}
 
 func UpdateStationGeo(ctx context.Context, id string, lat, lng float64) error {
 	_, err := Pool.Exec(ctx, `
 		UPDATE stations SET lat = $1, lng = $2, updated_at = now() WHERE id = $3
 	`, lat, lng, id)
 	return err
+}
+
+// InsertFuelReport inserts a user-submitted fuel report
+func InsertFuelReport(ctx context.Context, r models.FuelReport) (int64, error) {
+	var id int64
+	err := Pool.QueryRow(ctx, `
+		INSERT INTO fuel_reports (station_id, fuel_type, status, reporter_lat, reporter_lng, distance_km, note)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id
+	`, r.StationID, r.FuelType, r.Status, r.ReporterLat, r.ReporterLng, r.DistanceKm, r.Note).Scan(&id)
+	return id, err
+}
+
+// GetRecentReports returns latest reports for a station
+func GetRecentReports(ctx context.Context, stationID string, limit int) ([]models.FuelReport, error) {
+	rows, err := Pool.Query(ctx, `
+		SELECT fr.id, fr.station_id, fr.fuel_type, fr.status,
+		       fr.reporter_lat, fr.reporter_lng, fr.distance_km, fr.note, fr.created_at
+		FROM fuel_reports fr
+		WHERE fr.station_id = $1
+		ORDER BY fr.created_at DESC
+		LIMIT $2
+	`, stationID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []models.FuelReport
+	for rows.Next() {
+		var r models.FuelReport
+		if err := rows.Scan(&r.ID, &r.StationID, &r.FuelType, &r.Status,
+			&r.ReporterLat, &r.ReporterLng, &r.DistanceKm, &r.Note, &r.CreatedAt); err != nil {
+			continue
+		}
+		result = append(result, r)
+	}
+	return result, nil
+}
+
+// CheckReportRateLimit returns the last report time for this station+fuel within the window
+func CheckReportRateLimit(ctx context.Context, stationID, fuelType string, window time.Duration) (*time.Time, error) {
+	var lastReport *time.Time
+	err := Pool.QueryRow(ctx, `
+		SELECT MAX(created_at) FROM fuel_reports
+		WHERE station_id = $1 AND fuel_type = $2
+		  AND created_at > now() - $3::interval
+	`, stationID, fuelType, fmt.Sprintf("%d seconds", int(window.Seconds()))).Scan(&lastReport)
+	if err != nil {
+		return nil, err
+	}
+	return lastReport, nil
+}
+
+// GetFuelTypeCatalog returns all fuel types
+func GetFuelTypeCatalog(ctx context.Context) ([]models.FuelTypeCatalog, error) {
+	rows, err := Pool.Query(ctx, `SELECT id, name, grp, sort FROM fuel_type_catalog ORDER BY sort`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []models.FuelTypeCatalog
+	for rows.Next() {
+		var ft models.FuelTypeCatalog
+		if err := rows.Scan(&ft.ID, &ft.Name, &ft.Group, &ft.Sort); err != nil {
+			continue
+		}
+		result = append(result, ft)
+	}
+	return result, nil
 }
