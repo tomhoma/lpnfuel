@@ -1,0 +1,44 @@
+meta {
+  name: Submit Report
+  type: http
+  seq: 9
+}
+
+post {
+  url: {{baseUrl}}/stations/1/report
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "lat": 18.547,
+    "lng": 99.033,
+    "reports": [
+      {
+        "fuel_type": "diesel",
+        "status": "available"
+      },
+      {
+        "fuel_type": "gas91",
+        "status": "empty"
+      }
+    ]
+  }
+}
+
+docs {
+  ## Submit Fuel Report
+
+  ส่งรายงานสถานะน้ำมันจากผู้ใช้
+
+  **URL:** `POST /api/v1/stations/{id}/report`
+
+  **Body:**
+  - `lat`, `lng` - พิกัด GPS ของผู้รายงาน
+  - `reports` - array ของรายงาน
+    - `fuel_type` - ชนิดน้ำมัน (diesel, gas91, gas95, e20)
+    - `status` - สถานะ (available, empty, unknown)
+
+  **Rate limit:** 3 นาทีต่อ station+fuel_type
+}

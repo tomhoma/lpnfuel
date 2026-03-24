@@ -1,0 +1,31 @@
+meta {
+  name: Get Reports
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{baseUrl}}/reports?limit=50
+  body: none
+  auth: none
+}
+
+params:query {
+  limit: 50
+}
+
+docs {
+  ## Get Global Reports
+
+  ดึงรายงานสถานะน้ำมันล่าสุดจากทุกสถานี
+
+  **URL:** `GET /api/v1/reports?limit=50`
+
+  **Query params:**
+  - `limit` - จำนวนรายการ (default: 50, max: 200)
+
+  **Related:**
+  - `GET /api/v1/stations/{id}/reports` - รายงานเฉพาะสถานี
+  - `GET /api/v1/reports/latest` - เวลารายงานล่าสุด
+  - `GET /api/v1/fuel-types` - รายการชนิดน้ำมัน
+}

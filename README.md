@@ -1,6 +1,6 @@
 # LPNFuel
 
-Real-time fuel station status dashboard for Lamphun province, Thailand. Mobile-first web app showing availability of fuel across 57 stations on an interactive map.
+Real-time fuel station status dashboard for Lamphun province, Thailand. Mobile-first web app showing availability of fuel across 63 stations on an interactive map.
 
 ## Tech Stack
 
@@ -54,7 +54,7 @@ lpnfuel/
 │   │   └── migrations/001_init.sql  # Schema + materialized views
 │   ├── models/models.go        # Go structs (Station, FuelStatus, etc.)
 │   ├── config/config.go        # Environment variable loading
-│   ├── data/stations_geo.csv   # Station GPS coordinates (source of truth)
+│   ├── data/stations_geo.csv   # Station GPS coordinates (copy for Docker build)
 │   ├── testdata/ingest_payload.json  # Sample ingest payload
 │   ├── main.go                 # Entry point + CSV geo import on startup
 │   ├── Dockerfile
@@ -90,9 +90,11 @@ lpnfuel/
 │   ├── environments/           # Local + Production environments
 │   └── *.bru                   # API endpoint definitions
 ├── scripts/
-│   └── ingest.sh               # Shell script to POST ingest data
+│   ├── ingest.js               # Node.js + Playwright cron script (fetches GAS → POST /ingest)
+│   ├── .env                    # GAS_URL, API_URL, API_KEY, TIMEOUT_MS
+│   └── .env.example
 ├── data/
-│   └── stations_geo.csv        # Master station coordinates (57 stations)
+│   └── stations_geo.csv        # Master station coordinates (63 stations, source of truth)
 └── README.md
 ```
 
@@ -106,8 +108,12 @@ lpnfuel/
 | GET | `/api/v1/stations` | All stations with fuel status + summary |
 | GET | `/api/v1/stations/{id}` | Station detail + 7-day history |
 | GET | `/api/v1/stations/nearest?lat=&lng=` | Nearest stations by GPS |
-| GET | `/api/v1/dashboard` | Summary by district/brand + 7-day trend |
 | GET | `/api/v1/prices` | Fuel prices by brand |
+| GET | `/api/v1/fuel-types` | Fuel type catalog |
+| GET | `/api/v1/reports` | Global recent fuel reports |
+| GET | `/api/v1/reports/latest` | Latest report timestamp |
+| POST | `/api/v1/stations/{id}/report` | Submit user fuel report |
+| GET | `/api/v1/stations/{id}/reports` | Reports for a station |
 
 ### Data ingestion (protected)
 
@@ -169,20 +175,33 @@ Content-Type: application/json
 - **Brand normalization** — Fixes Thai character variants (๊→็), merges บางจาก-ซัสโก้→บางจาก
 - **Auto-unescape JSON** — Handles escaped JSON strings in ingest body
 - **CSV geo import** — Loads station coordinates from CSV on startup
+- **Auto-append new stations** — New station IDs from GAS are automatically appended to `stations_geo.csv` (with `lat=0, lng=0`)
 - **`updated_at` from ingest** — Uses `fetched_at` timestamp, not server time
 
 ## Data Flow
 
-1. **FuelRadar** scrapes fuel station data from GAS (government system)
-2. External automation POSTs data to `POST /api/v1/ingest` every ~3 minutes
-3. Backend normalizes brands, upserts stations + fuel status into PostgreSQL
-4. Frontend fetches from `GET /api/v1/stations` and renders on map
-5. `stations_geo.csv` provides GPS coordinates on backend startup (source of truth for geo)
+1. **Cron job** (`scripts/ingest.js`) runs every 5 minutes on local machine via Playwright headless browser
+2. Fetches station data from Google Apps Script (GAS)
+3. POSTs data to `POST /api/v1/ingest` with API key
+4. Backend normalizes brands, upserts stations + fuel status into PostgreSQL
+5. If new station IDs are found, auto-appends to `stations_geo.csv` (with `lat=0, lng=0`)
+6. Frontend fetches from `GET /api/v1/stations` and renders on map
+7. `stations_geo.csv` provides GPS coordinates on backend startup (source of truth for geo)
+8. **Price scheduler** (built-in) fetches PTTOR fuel prices daily at 05:15 & 19:30 ICT
+
+### Updating Station GPS Coordinates
+
+| Method | Use case |
+|---|---|
+| Edit `data/stations_geo.csv` | Bulk update — copy to `backend/data/` → push → redeploy |
+| `PUT /api/v1/stations/{id}/geo` | Update single station via API |
+
+> ⚠️ `data/stations_geo.csv` is the source of truth. `backend/data/stations_geo.csv` is a copy for Docker build — keep them in sync.
 
 ## Station Data
 
-- **57 stations** across 8 districts in Lamphun province
-- Station IDs have gaps matching GAS source data (1-39, 41, 43-48, 54-58, 60-62, 64-67)
+- **63 stations** across 8 districts in Lamphun province
+- Station IDs have gaps matching GAS source data (1-39, 41, 43-46, 54-58, 60-62, 64-73)
 - Brands: ปตท., บางจาก, พีที, คาลเท็กซ์, เชลล์
 - GPS coordinates sourced from Google Maps
 
