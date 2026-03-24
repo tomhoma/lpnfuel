@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import type { StationWithStatus, PricesResponse } from '../types'
-import TransportBadge from './TransportBadge'
 import FuelReportForm from './FuelReportForm'
 import FuelStatusGrid from './FuelStatusGrid'
 import { formatDistance } from '../hooks/useDistance'
@@ -105,7 +104,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
         </div>
 
         <div className="px-4 pb-4 space-y-2.5">
-          {/* Row 1: brand + distance + close */}
+          {/* Row 1: brand + distance + nav + close */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
@@ -117,15 +116,31 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
                 </span>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 -mr-2 text-gray-300 hover:text-gray-500 active:scale-90 transition"
-              aria-label="ปิด"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-3">
+              {navURL && (
+                <a
+                  href={navURL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 active:scale-[0.97] transition-all text-xs"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  นำทาง
+                </a>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 -mr-2 text-gray-300 hover:text-gray-500 active:scale-90 transition"
+                aria-label="ปิด"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Row 2: name + district inline */}
@@ -140,31 +155,26 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
             setShowReportModal(true)
           }} />
 
-          {station.transport_status && (
-            <TransportBadge status={station.transport_status} eta={station.transport_eta} />
-          )}
+          {station.transport_status && (() => {
+            const tc = {
+              'ล่าช้า': { icon: '⚠️', text: 'text-red-600' },
+              'กำลังจัดส่ง': { icon: '🚚', text: 'text-yellow-700' },
+              'กำลังลงน้ำมัน': { icon: '⛽', text: 'text-green-700' },
+            }[station.transport_status] ?? { icon: 'ℹ️', text: 'text-gray-600' }
+            return (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-gray-400 flex-shrink-0">การจัดส่งน้ำมัน</span>
+                <span className={`font-semibold ${tc.text} flex-shrink-0`}>{tc.icon} {station.transport_status}</span>
+                {updatedText && <span className="text-gray-300 flex-shrink-0">• {updatedText}</span>}
+              </div>
+            )
+          })()}
 
-          <div className="flex items-center gap-2">
-            {updatedText && (
-              <span className="text-xs text-gray-400 flex-shrink-0">
-                อัปเดต: {updatedText}
-              </span>
-            )}
-            {navURL && (
-              <a
-                href={navURL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-auto flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 active:scale-[0.98] transition-all text-sm flex-shrink-0"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                นำทาง
-              </a>
-            )}
-          </div>
+          {updatedText && (
+            <span className="text-xs text-gray-400">
+              อัปเดต: {updatedText}
+            </span>
+          )}
 
           {/* Geo report */}
           {!showGeoReport && !geoSent && (
