@@ -204,10 +204,6 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
             </div>
           )}
 
-          {/* GPS notice */}
-          <p className="text-[10px] text-gray-400 text-center">
-            📍 ต้องอยู่ภายใน 3 กม. จากปั๊มเพื่อรายงาน
-          </p>
         </div>
 
         {/* Fixed footer */}
