@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -334,23 +335,32 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check GPS proximity
+	// Check GPS proximity — TEMPORARILY DISABLED
 	var distKm float64
 	if station.Lat != nil && station.Lng != nil {
 		distKm = geo.Haversine(req.Lat, req.Lng, *station.Lat, *station.Lng)
-		if distKm > maxReportDistanceKm {
-			writeJSON(w, http.StatusForbidden, map[string]any{
-				"error":       "too far from station",
-				"distance_km": distKm,
-				"max_km":      maxReportDistanceKm,
-			})
-			return
-		}
+		// if distKm > maxReportDistanceKm {
+		// 	writeJSON(w, http.StatusForbidden, map[string]any{
+		// 		"error":       "too far from station",
+		// 		"distance_km": distKm,
+		// 		"max_km":      maxReportDistanceKm,
+		// 	})
+		// 	return
+		// }
+	}
+
+	// Generate batch ID and extract debug info
+	batchID := fmt.Sprintf("%s-%d", stationID, time.Now().UnixMilli())
+	userAgent := r.Header.Get("User-Agent")
+	ipAddress := r.RemoteAddr
+	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+		ipAddress = strings.Split(fwd, ",")[0]
 	}
 
 	accepted := 0
 	rateLimited := 0
 	var retryAfterSec int
+	var acceptedFuels []string
 	for _, rpt := range req.Reports {
 		if !validStatuses[rpt.Status] {
 			continue
@@ -381,6 +391,9 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 			ReporterLat: &req.Lat,
 			ReporterLng: &req.Lng,
 			DistanceKm:  &distKm,
+			UserAgent:   userAgent,
+			IPAddress:   ipAddress,
+			BatchID:     batchID,
 		}
 
 		if _, err := db.InsertFuelReport(ctx, report); err != nil {
@@ -388,6 +401,12 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		accepted++
+		acceptedFuels = append(acceptedFuels, rpt.FuelType+"="+rpt.Status)
+	}
+
+	if accepted > 0 {
+		log.Printf("Report: station=%s batch=%s accepted=%d dist=%.1fkm ip=%s fuels=[%s]",
+			stationID, batchID, accepted, distKm, ipAddress, strings.Join(acceptedFuels, ", "))
 	}
 
 	status := http.StatusOK
@@ -436,4 +455,18 @@ func handleLatestReport(w http.ResponseWriter, r *http.Request) {
 		resp["latest_report_at"] = t.Format(time.RFC3339)
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func handleGlobalReports(w http.ResponseWriter, r *http.Request) {
+	limit := 50
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && l > 0 && l <= 200 {
+		limit = l
+	}
+
+	reports, err := db.GetGlobalRecentReports(r.Context(), limit)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"reports": reports})
 }

@@ -206,10 +206,10 @@ func UpdateStationGeo(ctx context.Context, id string, lat, lng float64) error {
 func InsertFuelReport(ctx context.Context, r models.FuelReport) (int64, error) {
 	var id int64
 	err := Pool.QueryRow(ctx, `
-		INSERT INTO fuel_reports (station_id, fuel_type, status, reporter_lat, reporter_lng, distance_km, note)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO fuel_reports (station_id, fuel_type, status, reporter_lat, reporter_lng, distance_km, note, user_agent, ip_address, batch_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
-	`, r.StationID, r.FuelType, r.Status, r.ReporterLat, r.ReporterLng, r.DistanceKm, r.Note).Scan(&id)
+	`, r.StationID, r.FuelType, r.Status, r.ReporterLat, r.ReporterLng, r.DistanceKm, r.Note, r.UserAgent, r.IPAddress, r.BatchID).Scan(&id)
 	return id, err
 }
 
@@ -217,7 +217,9 @@ func InsertFuelReport(ctx context.Context, r models.FuelReport) (int64, error) {
 func GetRecentReports(ctx context.Context, stationID string, limit int) ([]models.FuelReport, error) {
 	rows, err := Pool.Query(ctx, `
 		SELECT fr.id, fr.station_id, fr.fuel_type, fr.status,
-		       fr.reporter_lat, fr.reporter_lng, fr.distance_km, fr.note, fr.created_at
+		       fr.reporter_lat, fr.reporter_lng, fr.distance_km, fr.note,
+		       COALESCE(fr.user_agent, ''), COALESCE(fr.ip_address, ''), COALESCE(fr.batch_id, ''),
+		       fr.created_at
 		FROM fuel_reports fr
 		WHERE fr.station_id = $1
 		ORDER BY fr.created_at DESC
@@ -232,10 +234,52 @@ func GetRecentReports(ctx context.Context, stationID string, limit int) ([]model
 	for rows.Next() {
 		var r models.FuelReport
 		if err := rows.Scan(&r.ID, &r.StationID, &r.FuelType, &r.Status,
-			&r.ReporterLat, &r.ReporterLng, &r.DistanceKm, &r.Note, &r.CreatedAt); err != nil {
+			&r.ReporterLat, &r.ReporterLng, &r.DistanceKm, &r.Note,
+			&r.UserAgent, &r.IPAddress, &r.BatchID,
+			&r.CreatedAt); err != nil {
 			continue
 		}
 		result = append(result, r)
+	}
+	return result, nil
+}
+
+// ReportWithStation is a FuelReport with station name and brand for the global feed
+type ReportWithStation struct {
+	models.FuelReport
+	StationName string `json:"station_name"`
+	StationBrand string `json:"station_brand"`
+}
+
+// GetGlobalRecentReports returns latest reports across all stations with station info
+func GetGlobalRecentReports(ctx context.Context, limit int) ([]ReportWithStation, error) {
+	rows, err := Pool.Query(ctx, `
+		SELECT fr.id, fr.station_id, fr.fuel_type, fr.status,
+		       fr.reporter_lat, fr.reporter_lng, fr.distance_km, fr.note,
+		       COALESCE(fr.user_agent, ''), COALESCE(fr.ip_address, ''), COALESCE(fr.batch_id, ''),
+		       fr.created_at,
+		       COALESCE(s.name, ''), COALESCE(s.brand, '')
+		FROM fuel_reports fr
+		LEFT JOIN stations s ON fr.station_id = s.id
+		ORDER BY fr.created_at DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []ReportWithStation
+	for rows.Next() {
+		var rws ReportWithStation
+		if err := rows.Scan(&rws.ID, &rws.StationID, &rws.FuelType, &rws.Status,
+			&rws.ReporterLat, &rws.ReporterLng, &rws.DistanceKm, &rws.Note,
+			&rws.UserAgent, &rws.IPAddress, &rws.BatchID,
+			&rws.CreatedAt,
+			&rws.StationName, &rws.StationBrand); err != nil {
+			continue
+		}
+		result = append(result, rws)
 	}
 	return result, nil
 }

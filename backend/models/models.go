@@ -136,6 +136,9 @@ type FuelReport struct {
 	ReporterLng *float64   `json:"reporter_lng,omitempty"`
 	DistanceKm  *float64   `json:"distance_km,omitempty"`
 	Note        string     `json:"note,omitempty"`
+	UserAgent   string     `json:"user_agent,omitempty"`
+	IPAddress   string     `json:"ip_address,omitempty"`
+	BatchID     string     `json:"batch_id,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
