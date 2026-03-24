@@ -77,11 +77,11 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
     return v !== null && v !== currentStatuses[k]
   }).length
 
-  const selectedCount = Object.values(reports).filter(v => v !== null).length
+
 
   const handleSubmit = async () => {
     const entries: ReportEntry[] = Object.entries(reports)
-      .filter(([, status]) => status !== null)
+      .filter(([key, status]) => status !== null && status !== currentStatuses[key])
       .map(([fuel_type, status]) => ({ fuel_type, status: status! }))
 
     if (entries.length === 0) return
@@ -227,16 +227,14 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
           {!result?.ok && (
             <button
               onClick={handleSubmit}
-              disabled={selectedCount === 0 || submitting}
+              disabled={changedCount === 0 || submitting}
               className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:shadow-none transition-all text-sm"
             >
               {submitting
                 ? 'กำลังส่ง...'
                 : changedCount > 0
                   ? `ส่งรายงาน (${changedCount} รายการ)`
-                  : selectedCount > 0
-                    ? 'ส่งรายงาน'
-                    : 'เลือกสถานะน้ำมันก่อน'}
+                  : 'เลือกสถานะน้ำมันก่อน'}
             </button>
           )}
         </div>
