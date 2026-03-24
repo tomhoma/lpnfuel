@@ -182,7 +182,7 @@ export default function MapPage() {
       </div>
 
       {/* Bottom sheet */}
-      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} />
+      <BottomSheet station={selectedStation} onClose={() => setSelectedStation(null)} prices={prices} />
 
       {/* Survey popup — shows once after splash */}
       <SurveyPopup />

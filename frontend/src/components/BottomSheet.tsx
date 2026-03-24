@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import type { StationWithStatus } from '../types'
+import type { StationWithStatus, PricesResponse } from '../types'
 import TransportBadge from './TransportBadge'
 import FuelReportForm from './FuelReportForm'
+import FuelPriceGrid from './FuelPriceGrid'
+import RecentReports from './RecentReports'
 import { formatDistance } from '../hooks/useDistance'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
@@ -9,9 +11,10 @@ const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkK
 interface BottomSheetProps {
   station: StationWithStatus | null
   onClose: () => void
+  prices?: PricesResponse | null
 }
 
-export default function BottomSheet({ station, onClose }: BottomSheetProps) {
+export default function BottomSheet({ station, onClose, prices }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null)
   const [showGeoReport, setShowGeoReport] = useState(false)
   const [geoDetail, setGeoDetail] = useState('')
@@ -127,11 +130,15 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
             <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
+          {/* Fuel prices */}
+          <FuelPriceGrid prices={prices} brand={station.brand} district={station.district} />
+
+          {/* Recent user reports */}
+          <RecentReports stationId={station.id} />
+
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
-
-          {/* Fuel status report */}
           <FuelReportForm stationId={station.id} stationBrand={station.brand} />
 
           {/* Row: updated + navigate button */}
