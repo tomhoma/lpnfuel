@@ -130,7 +130,7 @@ export default function MapPage() {
           <span className="text-base font-bold text-gray-800">ค้นหาน้ำมันในลำพูน</span>
         </div>
         <div className="text-xs text-gray-400">
-          ข้อมูลจาก <a href="https://script.google.com/macros/s/AKfycbwoSjjJd-6VA9k9eLIOrr5OD8bzBRIAm6ZT8KZAmA1YqpgRTXmQlpWSsbSIUI7BG8wZ/exec" target="_blank" rel="noopener noreferrer" className="underline">FuelRadar</a> {sourceTime && <span className={`inline-flex items-center gap-1 transition-colors duration-700 ${justRefreshed ? 'text-green-500' : ''}`}><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{justRefreshed ? 'อัพเดทแล้ว' : sourceTime}</span>}
+          ข้อมูลจากชาวลำพูน {sourceTime && <span className={`inline-flex items-center gap-1 transition-colors duration-700 ${justRefreshed ? 'text-green-500' : ''}`}><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{justRefreshed ? 'อัพเดทแล้ว' : sourceTime}</span>}
         </div>
       </div>
 

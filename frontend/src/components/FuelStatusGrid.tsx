@@ -175,7 +175,12 @@ export default function FuelStatusGrid({ station, prices, onReport }: Props) {
         </span>
         <span className="text-[10px] text-gray-400">
           {hasUserReports
-            ? `👤 ${timeAgo(mostRecentReport.created_at)}`
+            ? <>
+                👤 {timeAgo(mostRecentReport.created_at)}
+                <span className="text-gray-300 ml-1">
+                  ({[...latestUserReport.keys()].map(k => FUEL_SHORT[k] || k).join(', ')})
+                </span>
+              </>
             : 'ข้อมูลจากระบบ'}
         </span>
       </div>

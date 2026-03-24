@@ -162,19 +162,13 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
               'กำลังลงน้ำมัน': { icon: '⛽', text: 'text-green-700' },
             }[station.transport_status] ?? { icon: 'ℹ️', text: 'text-gray-600' }
             return (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-gray-400 flex-shrink-0">การจัดส่งน้ำมัน</span>
-                <span className={`font-semibold ${tc.text} flex-shrink-0`}>{tc.icon} {station.transport_status}</span>
-                {updatedText && <span className="text-gray-300 flex-shrink-0">• {updatedText}</span>}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-400">การจัดส่งน้ำมัน</span>
+                <span className={`font-semibold ${tc.text}`}>{tc.icon} {station.transport_status}</span>
+                {updatedText && <span className="text-gray-300">อัปเดต {updatedText}</span>}
               </div>
             )
           })()}
-
-          {updatedText && (
-            <span className="text-xs text-gray-400">
-              อัปเดต: {updatedText}
-            </span>
-          )}
 
           {/* Geo report */}
           {!showGeoReport && !geoSent && (
