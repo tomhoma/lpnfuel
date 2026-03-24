@@ -12,17 +12,18 @@ const BRAND_FUELS: Record<string, string[]> = {
   'เชลล์': ['gsh95', 'gsh91', 'e20', 'spg95', 'diesel_b7', 'diesel_premium'],
 }
 
-const FUEL_LABELS: Record<string, string> = {
-  gsh95: 'แก๊สโซฮอล์ 95',
-  gsh91: 'แก๊สโซฮอล์ 91',
+// Short labels for compact chips
+const FUEL_SHORT: Record<string, string> = {
+  gsh95: '95',
+  gsh91: '91',
   e20: 'E20',
   e85: 'E85',
-  spg95: 'พรีเมียม 95',
-  bzn95: 'เบนซิน 95',
-  diesel_b7: 'ดีเซล B7',
-  diesel_b10: 'ดีเซล B10',
-  diesel_b20: 'ดีเซล B20',
-  diesel_premium: 'ดีเซลพรีเมียม',
+  spg95: 'พรีเมียม',
+  bzn95: 'เบนซิน',
+  diesel_b7: 'B7',
+  diesel_b10: 'B10',
+  diesel_b20: 'B20',
+  diesel_premium: 'พรีเมียม',
 }
 
 // Map catalog fuel_type → PTTOR price API key
@@ -34,8 +35,8 @@ const PRICE_MAP: Record<string, string> = {
   spg95: 'super_power_gsh95',
   bzn95: 'benzin95',
   diesel_b7: 'diesel',
-  diesel_b10: 'diesel',       // same base price
-  diesel_b20: 'diesel',       // same base price
+  diesel_b10: 'diesel',
+  diesel_b20: 'diesel',
   diesel_premium: 'premium_diesel',
 }
 
@@ -60,12 +61,9 @@ interface FuelReport {
   created_at: string
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────
-
 /** Get today's 1AM reset boundary in Asia/Bangkok */
 function getTodayResetTime(): Date {
   const now = new Date()
-  // Convert to Bangkok time (+7)
   const bangkokOffset = 7 * 60 * 60 * 1000
   const utcMs = now.getTime() + now.getTimezoneOffset() * 60000
   const bangkokMs = utcMs + bangkokOffset
@@ -74,12 +72,10 @@ function getTodayResetTime(): Date {
   const reset = new Date(bangkokNow)
   reset.setHours(1, 0, 0, 0)
 
-  // If current time is before 1AM, use yesterday's 1AM
   if (bangkokNow.getHours() < 1) {
     reset.setDate(reset.getDate() - 1)
   }
 
-  // Convert back to local time
   const resetUtc = reset.getTime() - bangkokOffset + now.getTimezoneOffset() * -60000
   return new Date(resetUtc - now.getTimezoneOffset() * 60000)
 }
@@ -90,7 +86,7 @@ function getGASStatus(station: StationWithStatus, fuelId: string): FuelStatus {
       const val = (station as any)[gasField] as string | undefined
       if (val === 'มี') return 'available'
       if (val === 'หมด') return 'empty'
-      return null // '-' or missing
+      return null
     }
   }
   return null
@@ -106,7 +102,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)} วันที่แล้ว`
 }
 
-// ─── Component ────────────────────────────────────────────────────
+// ─── Main Component ───────────────────────────────────────────────
 
 interface Props {
   station: StationWithStatus
@@ -123,13 +119,11 @@ export default function FuelStatusGrid({ station, prices }: Props) {
       .catch(() => setReports([]))
   }, [station.id])
 
-  const availableFuels = BRAND_FUELS[station.brand] || Object.keys(FUEL_LABELS)
+  const availableFuels = BRAND_FUELS[station.brand] || Object.keys(FUEL_SHORT)
   const resetTime = getTodayResetTime()
 
-  // Filter reports to today (after 1AM reset)
   const todayReports = reports.filter(r => new Date(r.created_at) >= resetTime)
 
-  // Build status map: user report → GAS fallback
   const latestUserReport = new Map<string, FuelReport>()
   for (const r of todayReports) {
     if (!latestUserReport.has(r.fuel_type)) {
@@ -137,13 +131,11 @@ export default function FuelStatusGrid({ station, prices }: Props) {
     }
   }
 
-  // Price lookup
   const priceBrand = BRAND_PRICE_MAP[station.brand]
   const getPrice = (fuelId: string): number | null => {
     if (!prices?.prices || !priceBrand) return null
     const priceKey = PRICE_MAP[fuelId]
     if (!priceKey) return null
-    // Try station district → empty → เมืองลำพูน
     const d = prices.prices[station.district]?.[priceBrand]?.[priceKey]
     if (d != null) return d
     const f = prices.prices['']?.[priceBrand]?.[priceKey]
@@ -151,12 +143,23 @@ export default function FuelStatusGrid({ station, prices }: Props) {
     return prices.prices['เมืองลำพูน']?.[priceBrand]?.[priceKey] ?? null
   }
 
-  // Build rows
   const gasFuels = availableFuels.filter(id => !id.startsWith('diesel'))
   const dieselFuels = availableFuels.filter(id => id.startsWith('diesel'))
 
   const hasUserReports = todayReports.length > 0
   const mostRecentReport = todayReports[0]
+
+  // Build fuel items with status + price
+  const buildItems = (fuels: string[]) => fuels.map(fuelId => {
+    const userReport = latestUserReport.get(fuelId)
+    return {
+      id: fuelId,
+      label: FUEL_SHORT[fuelId],
+      status: (userReport ? userReport.status : getGASStatus(station, fuelId)) as FuelStatus,
+      isUser: !!userReport,
+      price: getPrice(fuelId),
+    }
+  })
 
   return (
     <div className="space-y-2">
@@ -167,103 +170,72 @@ export default function FuelStatusGrid({ station, prices }: Props) {
         </span>
         <span className="text-[10px] text-gray-400">
           {hasUserReports
-            ? `ผู้ใช้รายงาน ${timeAgo(mostRecentReport.created_at)}`
+            ? `👤 ${timeAgo(mostRecentReport.created_at)}`
             : 'ข้อมูลจากระบบ'}
         </span>
       </div>
 
-      {/* Gasoline group */}
+      {/* Gasoline chips */}
       {gasFuels.length > 0 && (
-        <FuelGroup label="เบนซิน / แก๊สโซฮอล์" fuels={gasFuels} station={station}
-          latestUserReport={latestUserReport} getPrice={getPrice} />
+        <div>
+          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider mb-1">เบนซิน</p>
+          <div className="flex flex-wrap gap-1">
+            {buildItems(gasFuels).map(f => (
+              <FuelChip key={f.id} {...f} />
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* Diesel group */}
+      {/* Diesel chips */}
       {dieselFuels.length > 0 && (
-        <FuelGroup label="ดีเซล" fuels={dieselFuels} station={station}
-          latestUserReport={latestUserReport} getPrice={getPrice} />
+        <div>
+          <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider mb-1">ดีเซล</p>
+          <div className="flex flex-wrap gap-1">
+            {buildItems(dieselFuels).map(f => (
+              <FuelChip key={f.id} {...f} />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
-function FuelGroup({ label, fuels, station, latestUserReport, getPrice }: {
-  label: string
-  fuels: string[]
-  station: StationWithStatus
-  latestUserReport: Map<string, FuelReport>
-  getPrice: (fuelId: string) => number | null
-}) {
-  return (
-    <div>
-      <p className="text-[10px] font-semibold text-gray-300 uppercase tracking-wider mb-1">{label}</p>
-      <div className="space-y-0.5">
-        {fuels.map(fuelId => {
-          const userReport = latestUserReport.get(fuelId)
-          let status: FuelStatus
-          let source: 'user' | 'gas'
+// ─── Compact Chip ─────────────────────────────────────────────────
 
-          if (userReport) {
-            status = userReport.status as FuelStatus
-            source = 'user'
-          } else {
-            status = getGASStatus(station, fuelId)
-            source = 'gas'
-          }
-
-          const price = getPrice(fuelId)
-
-          return (
-            <FuelRow
-              key={fuelId}
-              label={FUEL_LABELS[fuelId]}
-              status={status}
-              source={source}
-              price={price}
-            />
-          )
-        })}
-      </div>
-    </div>
-  )
+const STATUS_STYLES: Record<string, string> = {
+  available: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+  empty:     'bg-red-50 border-red-200 text-red-600',
+  unknown:   'bg-gray-50 border-gray-200 text-gray-500',
 }
 
-function FuelRow({ label, status, source, price }: {
+function FuelChip({ label, status, isUser, price }: {
+  id: string
   label: string
   status: FuelStatus
-  source: 'user' | 'gas'
+  isUser: boolean
   price: number | null
 }) {
-  const statusConfig = {
-    available: { text: 'มี', bg: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500' },
-    empty: { text: 'หมด', bg: 'bg-red-100 text-red-600', dot: 'bg-red-500' },
-    unknown: { text: '?', bg: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400' },
-  }
-
-  const sc = status ? statusConfig[status] : null
+  const style = status ? STATUS_STYLES[status] : 'bg-gray-50 border-gray-100 text-gray-400'
 
   return (
-    <div className="flex items-center py-1 px-1 rounded-lg hover:bg-gray-50 transition">
+    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-xs font-medium transition
+      ${style} ${isUser ? 'ring-1 ring-amber-300' : ''}`}
+    >
       {/* Status dot */}
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${sc?.dot || 'bg-gray-200'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+        status === 'available' ? 'bg-emerald-500' :
+        status === 'empty' ? 'bg-red-500' :
+        status === 'unknown' ? 'bg-gray-400' : 'bg-gray-200'
+      }`} />
 
-      {/* Fuel name */}
-      <span className="text-xs text-gray-700 ml-2 flex-1 truncate">{label}</span>
+      {/* Label */}
+      <span>{label}</span>
 
-      {/* Status badge */}
-      {sc ? (
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${sc.bg} ${source === 'user' ? 'ring-1 ring-amber-300' : ''}`}>
-          {sc.text}
-        </span>
-      ) : (
-        <span className="text-[10px] text-gray-300 px-1.5">—</span>
-      )}
-
-      {/* Price */}
-      {price !== null ? (
-        <span className="text-xs font-bold text-gray-800 ml-2 w-12 text-right">{price.toFixed(2)}</span>
-      ) : (
-        <span className="w-12 ml-2" />
+      {/* Price (if available) */}
+      {price !== null && (
+        <span className="text-[10px] font-bold text-gray-700 ml-0.5">{price.toFixed(2)}</span>
       )}
     </div>
   )
