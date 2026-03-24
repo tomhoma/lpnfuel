@@ -304,7 +304,7 @@ func computeSummary(stations []models.StationWithStatus) models.OverallSummary {
 }
 
 const maxReportDistanceKm = 3.0
-const reportRateLimitWindow = 15 * time.Minute
+const reportRateLimitWindow = 3 * time.Minute
 
 var validStatuses = map[string]bool{"available": true, "empty": true, "unknown": true}
 
@@ -350,19 +350,28 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 
 	accepted := 0
 	rateLimited := 0
+	var retryAfterSec int
 	for _, rpt := range req.Reports {
 		if !validStatuses[rpt.Status] {
 			continue
 		}
 
-		limited, err := db.CheckReportRateLimit(ctx, stationID, rpt.FuelType, reportRateLimitWindow)
+		lastReport, err := db.CheckReportRateLimit(ctx, stationID, rpt.FuelType, reportRateLimitWindow)
 		if err != nil {
 			log.Printf("rate limit check error: %v", err)
 			continue
 		}
-		if limited {
-			rateLimited++
-			continue
+		if lastReport != nil {
+			elapsed := time.Since(*lastReport)
+			remaining := reportRateLimitWindow - elapsed
+			if remaining > 0 {
+				secs := int(remaining.Seconds()) + 1
+				if secs > retryAfterSec {
+					retryAfterSec = secs
+				}
+				rateLimited++
+				continue
+			}
 		}
 
 		report := models.FuelReport{
@@ -382,15 +391,18 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := http.StatusOK
-	if accepted == 0 && rateLimited > 0 {
-		status = http.StatusTooManyRequests
-	}
-
-	writeJSON(w, status, map[string]any{
+	resp := map[string]any{
 		"status":       "ok",
 		"accepted":     accepted,
 		"rate_limited": rateLimited,
-	})
+	}
+	if accepted == 0 && rateLimited > 0 {
+		status = http.StatusTooManyRequests
+		resp["error"] = "พึ่งอัพเดทไปเมื่อสักครู่ กรุณารออีกสักครู่"
+		resp["retry_after_seconds"] = retryAfterSec
+	}
+
+	writeJSON(w, status, resp)
 }
 
 func handleGetReports(w http.ResponseWriter, r *http.Request) {

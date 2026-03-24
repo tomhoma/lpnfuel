@@ -240,18 +240,18 @@ func GetRecentReports(ctx context.Context, stationID string, limit int) ([]model
 	return result, nil
 }
 
-// CheckReportRateLimit checks if a report was submitted for this station+fuel within the window
-func CheckReportRateLimit(ctx context.Context, stationID, fuelType string, window time.Duration) (bool, error) {
-	var count int
+// CheckReportRateLimit returns the last report time for this station+fuel within the window
+func CheckReportRateLimit(ctx context.Context, stationID, fuelType string, window time.Duration) (*time.Time, error) {
+	var lastReport *time.Time
 	err := Pool.QueryRow(ctx, `
-		SELECT COUNT(*) FROM fuel_reports
+		SELECT MAX(created_at) FROM fuel_reports
 		WHERE station_id = $1 AND fuel_type = $2
 		  AND created_at > now() - $3::interval
-	`, stationID, fuelType, fmt.Sprintf("%d seconds", int(window.Seconds()))).Scan(&count)
+	`, stationID, fuelType, fmt.Sprintf("%d seconds", int(window.Seconds()))).Scan(&lastReport)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	return count > 0, nil
+	return lastReport, nil
 }
 
 // GetFuelTypeCatalog returns all fuel types
