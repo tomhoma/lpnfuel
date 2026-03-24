@@ -48,7 +48,7 @@ const FUEL_LABELS: Record<string, string> = {
 const STATUS_CONFIG = [
   { value: 'available' as const, label: 'มี', emoji: '🟢', color: 'bg-emerald-500 text-white' },
   { value: 'empty' as const, label: 'หมด', emoji: '🔴', color: 'bg-red-500 text-white' },
-  { value: 'unknown' as const, label: 'ไม่ทราบ', emoji: '⚪', color: 'bg-gray-300 text-gray-700' },
+  { value: 'unknown' as const, label: 'กำลังลง', emoji: '🔄', color: 'bg-blue-100 text-blue-700' },
 ]
 
 export default function FuelReportForm({ stationId, stationName, stationBrand, currentStatuses, onClose }: Props) {
