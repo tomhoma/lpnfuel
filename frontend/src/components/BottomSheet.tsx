@@ -19,6 +19,8 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
   const [geoDetail, setGeoDetail] = useState('')
   const [geoSending, setGeoSending] = useState(false)
   const [geoSent, setGeoSent] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportStatuses, setReportStatuses] = useState<Record<string, string | null>>({})
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -45,6 +47,8 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
     setGeoDetail('')
     setGeoSending(false)
     setGeoSent(false)
+    setShowReportModal(false)
+    setReportStatuses({})
   }, [station?.id])
 
   const submitGeoReport = async () => {
@@ -130,14 +134,14 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
           </div>
 
           {/* Fuel status + prices */}
-          <FuelStatusGrid station={station} prices={prices} />
+          <FuelStatusGrid station={station} prices={prices} onReport={(statuses) => {
+            setReportStatuses(statuses)
+            setShowReportModal(true)
+          }} />
 
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
-
-          {/* Report fuel status */}
-          <FuelReportForm stationId={station.id} stationBrand={station.brand} />
 
           <div className="flex items-center gap-2">
             {updatedText && (
@@ -208,6 +212,17 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
           )}
         </div>
       </div>
+
+      {/* Report modal — separate overlay on top */}
+      {showReportModal && station && (
+        <FuelReportForm
+          stationId={station.id}
+          stationName={station.name}
+          stationBrand={station.brand}
+          currentStatuses={reportStatuses}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </div>
   )
 }

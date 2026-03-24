@@ -2,13 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
-interface FuelTypeCatalog {
-  id: string
-  name: string
-  group: string
-  sort: number
-}
-
 interface ReportEntry {
   fuel_type: string
   status: 'available' | 'empty' | 'unknown'
@@ -16,10 +9,12 @@ interface ReportEntry {
 
 interface Props {
   stationId: string
+  stationName: string
   stationBrand: string
+  currentStatuses: Record<string, string | null>  // fuelId → 'available'|'empty'|'unknown'|null
+  onClose: () => void
 }
 
-// Fuel types available per brand (only show relevant ones)
 const BRAND_FUELS: Record<string, string[]> = {
   'ปตท.': ['gsh95', 'gsh91', 'e20', 'e85', 'spg95', 'bzn95', 'diesel_b7', 'diesel_b10', 'diesel_b20', 'diesel_premium'],
   'พีที': ['gsh95', 'gsh91', 'e20', 'diesel_b7', 'diesel_premium'],
@@ -47,30 +42,32 @@ const STATUS_CONFIG = [
   { value: 'unknown' as const, label: 'ไม่ทราบ', emoji: '⚪', color: 'bg-gray-300 text-gray-700' },
 ]
 
-export default function FuelReportForm({ stationId, stationBrand }: Props) {
-  const [expanded, setExpanded] = useState(false)
-  const [reports, setReports] = useState<Record<string, ReportEntry['status'] | null>>({})
+export default function FuelReportForm({ stationId, stationName, stationBrand, currentStatuses, onClose }: Props) {
+  // Pre-fill with current statuses
+  const [reports, setReports] = useState<Record<string, ReportEntry['status'] | null>>(() => {
+    const init: Record<string, ReportEntry['status'] | null> = {}
+    for (const [k, v] of Object.entries(currentStatuses)) {
+      init[k] = (v as ReportEntry['status']) || null
+    }
+    return init
+  })
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [geoError, setGeoError] = useState(false)
-
-  // Reset when station changes
-  useEffect(() => {
-    setExpanded(false)
-    setReports({})
-    setResult(null)
-    setSubmitting(false)
-    setGeoError(false)
-  }, [stationId])
 
   const availableFuels = BRAND_FUELS[stationBrand] || Object.keys(FUEL_LABELS)
 
   const toggleStatus = useCallback((fuelId: string, status: ReportEntry['status']) => {
     setReports(prev => ({
       ...prev,
-      [fuelId]: prev[fuelId] === status ? null : status, // toggle off if same
+      [fuelId]: prev[fuelId] === status ? null : status,
     }))
   }, [])
+
+  // Count how many selections changed from current
+  const changedCount = Object.entries(reports).filter(([k, v]) => {
+    return v !== null && v !== currentStatuses[k]
+  }).length
 
   const selectedCount = Object.values(reports).filter(v => v !== null).length
 
@@ -84,7 +81,6 @@ export default function FuelReportForm({ stationId, stationBrand }: Props) {
     setSubmitting(true)
     setResult(null)
 
-    // Get user location
     try {
       const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -113,12 +109,7 @@ export default function FuelReportForm({ stationId, stationBrand }: Props) {
         setResult({ ok: false, message: `⏳ พึ่งอัพเดทไป รออีก ${secs} วินาที` })
       } else if (data.accepted > 0) {
         setResult({ ok: true, message: `✅ ส่งสำเร็จ ${data.accepted} รายการ` })
-        // Auto collapse after success
-        setTimeout(() => {
-          setExpanded(false)
-          setReports({})
-          setResult(null)
-        }, 2000)
+        setTimeout(() => onClose(), 1200)
       } else {
         setResult({ ok: false, message: 'ไม่สามารถส่งได้ กรุณาลองใหม่' })
       }
@@ -130,101 +121,114 @@ export default function FuelReportForm({ stationId, stationBrand }: Props) {
     }
   }
 
-  if (!expanded) {
-    return (
-      <button
-        onClick={() => setExpanded(true)}
-        className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all text-sm"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-        รายงานสถานะน้ำมัน
-      </button>
-    )
-  }
+  // Prevent background scroll
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
 
-  // Gas and diesel groups
   const gasFuels = availableFuels.filter(id => !id.startsWith('diesel'))
   const dieselFuels = availableFuels.filter(id => id.startsWith('diesel'))
 
   return (
-    <div className="space-y-3 border-t border-gray-100 pt-3 animate-fadeIn">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-gray-700">รายงานสถานะน้ำมัน</h3>
-        <button
-          onClick={() => { setExpanded(false); setReports({}); setResult(null) }}
-          className="text-xs text-gray-400 hover:text-gray-600 transition"
-        >
-          ยกเลิก
-        </button>
+    <div className="fixed inset-0 z-[1100] flex items-end justify-center bg-black/40 animate-fadeIn">
+      <div
+        className="bg-white rounded-t-2xl w-full max-w-lg shadow-2xl max-h-[80vh] flex flex-col animate-slideUp"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-white rounded-t-2xl z-10 px-4 pt-3 pb-2 border-b border-gray-100">
+          <div className="flex justify-center mb-2">
+            <div className="w-8 h-1 bg-gray-300 rounded-full" />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-base font-bold text-gray-800">รายงานสถานะน้ำมัน</h3>
+              <p className="text-xs text-gray-400 mt-0.5">{stationName}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 -mr-2 text-gray-300 hover:text-gray-500 active:scale-90 transition"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-1">กดเปลี่ยนสถานะที่ต้องการแก้ไข</p>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          {/* Gasoline group */}
+          {gasFuels.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">เบนซิน / แก๊สโซฮอล์</p>
+              {gasFuels.map(fuelId => (
+                <FuelRow
+                  key={fuelId}
+                  fuelId={fuelId}
+                  label={FUEL_LABELS[fuelId]}
+                  selected={reports[fuelId] ?? null}
+                  onSelect={(status) => toggleStatus(fuelId, status)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Diesel group */}
+          {dieselFuels.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ดีเซล</p>
+              {dieselFuels.map(fuelId => (
+                <FuelRow
+                  key={fuelId}
+                  fuelId={fuelId}
+                  label={FUEL_LABELS[fuelId]}
+                  selected={reports[fuelId] ?? null}
+                  onSelect={(status) => toggleStatus(fuelId, status)}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* GPS notice */}
+          <p className="text-[10px] text-gray-400 text-center">
+            📍 ต้องอยู่ภายใน 3 กม. จากปั๊มเพื่อรายงาน
+          </p>
+        </div>
+
+        {/* Fixed footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-3 space-y-2">
+          {result && (
+            <p className={`text-sm text-center font-semibold ${result.ok ? 'text-green-600' : 'text-red-500'}`}>
+              {result.message}
+            </p>
+          )}
+
+          {geoError && (
+            <p className="text-[11px] text-gray-400 text-center">
+              💡 กรุณาเปิด GPS / อนุญาตตำแหน่ง แล้วลองใหม่
+            </p>
+          )}
+
+          {!result?.ok && (
+            <button
+              onClick={handleSubmit}
+              disabled={selectedCount === 0 || submitting}
+              className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:shadow-none transition-all text-sm"
+            >
+              {submitting
+                ? 'กำลังส่ง...'
+                : changedCount > 0
+                  ? `ส่งรายงาน (${changedCount} รายการ)`
+                  : selectedCount > 0
+                    ? 'ส่งรายงาน'
+                    : 'เลือกสถานะน้ำมันก่อน'}
+            </button>
+          )}
+        </div>
       </div>
-
-      <p className="text-xs text-gray-400">กดเลือกสถานะแต่ละชนิดน้ำมัน</p>
-
-      {/* Gasoline group */}
-      {gasFuels.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">เบนซิน / แก๊สโซฮอล์</p>
-          <div className="space-y-1">
-            {gasFuels.map(fuelId => (
-              <FuelRow
-                key={fuelId}
-                fuelId={fuelId}
-                label={FUEL_LABELS[fuelId]}
-                selected={reports[fuelId] ?? null}
-                onSelect={(status) => toggleStatus(fuelId, status)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Diesel group */}
-      {dieselFuels.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ดีเซล</p>
-          <div className="space-y-1">
-            {dieselFuels.map(fuelId => (
-              <FuelRow
-                key={fuelId}
-                fuelId={fuelId}
-                label={FUEL_LABELS[fuelId]}
-                selected={reports[fuelId] ?? null}
-                onSelect={(status) => toggleStatus(fuelId, status)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Result message */}
-      {result && (
-        <p className={`text-sm text-center font-semibold py-1 ${result.ok ? 'text-green-600' : 'text-red-500'}`}>
-          {result.message}
-        </p>
-      )}
-
-      {/* Submit button */}
-      {!result?.ok && (
-        <button
-          onClick={handleSubmit}
-          disabled={selectedCount === 0 || submitting}
-          className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:shadow-none transition-all text-sm"
-        >
-          {submitting
-            ? 'กำลังส่ง...'
-            : selectedCount > 0
-              ? `ส่งรายงาน (${selectedCount} รายการ)`
-              : 'เลือกสถานะน้ำมันก่อน'}
-        </button>
-      )}
-
-      {geoError && (
-        <p className="text-[11px] text-gray-400 text-center">
-          💡 ต้องเปิด GPS เพื่อยืนยันว่าอยู่ใกล้ปั๊ม (ภายใน 3 กม.)
-        </p>
-      )}
     </div>
   )
 }
@@ -245,7 +249,7 @@ function FuelRow({ fuelId, label, selected, onSelect }: {
             <button
               key={sc.value}
               onClick={() => onSelect(sc.value)}
-              className={`flex-1 py-1 rounded-lg text-xs font-semibold transition-all active:scale-95
+              className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95
                 ${isActive
                   ? sc.color + ' shadow-sm ring-2 ring-offset-1 ring-gray-300'
                   : 'bg-gray-100 text-gray-400 hover:bg-gray-200'

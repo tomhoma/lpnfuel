@@ -107,9 +107,10 @@ function timeAgo(dateStr: string): string {
 interface Props {
   station: StationWithStatus
   prices?: PricesResponse | null
+  onReport?: (currentStatuses: Record<string, string | null>) => void
 }
 
-export default function FuelStatusGrid({ station, prices }: Props) {
+export default function FuelStatusGrid({ station, prices, onReport }: Props) {
   const [reports, setReports] = useState<FuelReport[]>([])
 
   useEffect(() => {
@@ -149,17 +150,21 @@ export default function FuelStatusGrid({ station, prices }: Props) {
   const hasUserReports = todayReports.length > 0
   const mostRecentReport = todayReports[0]
 
-  // Build fuel items with status + price
-  const buildItems = (fuels: string[]) => fuels.map(fuelId => {
+  // Build current statuses map for report form pre-fill
+  const currentStatuses: Record<string, string | null> = {}
+  for (const fuelId of availableFuels) {
     const userReport = latestUserReport.get(fuelId)
-    return {
-      id: fuelId,
-      label: FUEL_SHORT[fuelId],
-      status: (userReport ? userReport.status : getGASStatus(station, fuelId)) as FuelStatus,
-      isUser: !!userReport,
-      price: getPrice(fuelId),
-    }
-  })
+    currentStatuses[fuelId] = userReport ? userReport.status : getGASStatus(station, fuelId)
+  }
+
+  // Build fuel items with status + price
+  const buildItems = (fuels: string[]) => fuels.map(fuelId => ({
+    id: fuelId,
+    label: FUEL_SHORT[fuelId],
+    status: currentStatuses[fuelId] as FuelStatus,
+    isUser: latestUserReport.has(fuelId),
+    price: getPrice(fuelId),
+  }))
 
   return (
     <div className="space-y-2">
@@ -197,6 +202,19 @@ export default function FuelStatusGrid({ station, prices }: Props) {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Report button */}
+      {onReport && (
+        <button
+          onClick={() => onReport(currentStatuses)}
+          className="w-full flex items-center justify-center gap-2 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] transition-all text-sm"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          รายงานสถานะน้ำมัน
+        </button>
       )}
     </div>
   )
