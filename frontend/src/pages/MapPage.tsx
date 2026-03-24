@@ -47,7 +47,7 @@ export default function MapPage() {
   }, [searchParams, setSearchParams])
 
   useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 1500)
+    const timer = setTimeout(() => setSplashDone(true), 1000)
     return () => clearTimeout(timer)
   }, [])
 
