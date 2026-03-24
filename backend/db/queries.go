@@ -272,3 +272,10 @@ func GetFuelTypeCatalog(ctx context.Context) ([]models.FuelTypeCatalog, error) {
 	}
 	return result, nil
 }
+
+// GetLatestReportTime returns the most recent fuel report time globally
+func GetLatestReportTime(ctx context.Context) *time.Time {
+	var t *time.Time
+	Pool.QueryRow(ctx, `SELECT MAX(created_at) FROM fuel_reports`).Scan(&t)
+	return t
+}

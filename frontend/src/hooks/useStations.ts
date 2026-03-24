@@ -81,3 +81,23 @@ export function usePrices() {
 
   return data
 }
+
+export function useLatestReport() {
+  const [time, setTime] = useState<string | null>(null)
+
+  const fetchLatest = useCallback(async () => {
+    try {
+      const res = await window.fetch(`${API_URL}/reports/latest`)
+      const json = await res.json()
+      if (json.latest_report_at) setTime(json.latest_report_at)
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    fetchLatest()
+    const interval = setInterval(fetchLatest, 3 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [fetchLatest])
+
+  return time
+}

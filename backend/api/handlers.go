@@ -429,4 +429,11 @@ func handleFuelTypes(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"fuel_types": catalog})
 }
 
-
+func handleLatestReport(w http.ResponseWriter, r *http.Request) {
+	t := db.GetLatestReportTime(r.Context())
+	resp := map[string]any{"latest_report_at": nil}
+	if t != nil {
+		resp["latest_report_at"] = t.Format(time.RFC3339)
+	}
+	writeJSON(w, http.StatusOK, resp)
+}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { StationWithStatus, FuelType, FilterStatus, BrandFilter } from '../types'
-import { useStations, usePrices } from '../hooks/useStations'
+import { useStations, usePrices, useLatestReport } from '../hooks/useStations'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { haversine } from '../hooks/useDistance'
 import MapView from '../components/MapView'
@@ -26,6 +26,7 @@ function getFuelValue(s: StationWithStatus, fuel: FuelType): string {
 export default function MapPage() {
   const { data, loading, error, lastUpdated, dataVersion, justRefreshed } = useStations()
   const prices = usePrices()
+  const latestReportAt = useLatestReport()
   const geo = useGeolocation()
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -118,8 +119,8 @@ export default function MapPage() {
 
   const summary = data?.summary ?? { total: 0, with_fuel: 0, all_empty: 0, diesel_crisis: false, diesel_count: 0 }
 
-  const sourceTime = data?.updated_at
-    ? new Date(data.updated_at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  const reportTime = latestReportAt
+    ? new Date(latestReportAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
     : null
 
   return (
@@ -130,7 +131,7 @@ export default function MapPage() {
           <span className="text-base font-bold text-gray-800">ค้นหาน้ำมันในลำพูน</span>
         </div>
         <div className="text-xs text-gray-400">
-          ข้อมูลจากชาวลำพูน {sourceTime && <span className={`inline-flex items-center gap-1 transition-colors duration-700 ${justRefreshed ? 'text-green-500' : ''}`}><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{justRefreshed ? 'อัพเดทแล้ว' : sourceTime}</span>}
+          ข้อมูลจากชาวลำพูน {reportTime && <span className={`inline-flex items-center gap-1 transition-colors duration-700 ${justRefreshed ? 'text-green-500' : ''}`}><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>{justRefreshed ? 'อัพเดทแล้ว' : reportTime}</span>}
         </div>
       </div>
 
