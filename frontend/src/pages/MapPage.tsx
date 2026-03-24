@@ -177,7 +177,7 @@ export default function MapPage() {
         </div>
 
         {/* Floating stats overlay */}
-        <StatsBar stations={data?.stations || []} />
+        <StatsBar />
       </div>
 
       {/* Bottom sheet */}

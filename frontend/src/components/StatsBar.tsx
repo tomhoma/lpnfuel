@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { StationWithStatus } from '../types'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
@@ -33,11 +32,7 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)} วันที่แล้ว`
 }
 
-interface StatsBarProps {
-  stations: StationWithStatus[]
-}
-
-export default function StatsBar({ stations }: StatsBarProps) {
+export default function StatsBar() {
   const [reports, setReports] = useState<ReportItem[]>([])
 
   // Fetch recent global reports
@@ -93,20 +88,7 @@ export default function StatsBar({ stations }: StatsBarProps) {
         })
       }
 
-      if (entries.length >= 8) break
-    }
-
-    // 2. Stations with incoming supply (กำลังจัดส่ง / กำลังลงน้ำมัน)
-    const incoming = stations.filter(s =>
-      s.transport_status === 'กำลังจัดส่ง' || s.transport_status === 'กำลังลงน้ำมัน'
-    )
-    for (const s of incoming.slice(0, 4)) {
-      const status = s.transport_status === 'กำลังลงน้ำมัน' ? 'กำลังลงน้ำมัน' : 'กำลังจัดส่ง'
-      entries.push({
-        icon: '🚛',
-        text: `${s.brand} ${s.name} ${status}${s.transport_eta ? ` · ${s.transport_eta}` : ''}`,
-        highlight: true,
-      })
+      if (entries.length >= 10) break
     }
 
     // Fallback if no data
