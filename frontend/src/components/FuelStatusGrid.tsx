@@ -50,7 +50,6 @@ const GAS_FALLBACK: Record<string, string[]> = {
 
 const BRAND_PRICE_MAP: Record<string, string> = {
   'ปตท.': 'PTT',
-  'พีที': 'PTT',
 }
 
 type FuelStatus = 'available' | 'empty' | 'unknown' | null
