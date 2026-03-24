@@ -24,6 +24,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
+      if (showReportModal) return // Don't close while report modal is open
       if (sheetRef.current && !sheetRef.current.contains(e.target as Node)) {
         onClose()
       }
@@ -32,7 +33,7 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
       document.addEventListener('mousedown', handleClickOutside)
     }
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [station, onClose])
+  }, [station, onClose, showReportModal])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {

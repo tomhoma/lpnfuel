@@ -23,6 +23,14 @@ const BRAND_FUELS: Record<string, string[]> = {
   'เชลล์': ['gsh95', 'gsh91', 'e20', 'spg95', 'diesel_b7', 'diesel_premium'],
 }
 
+const BRAND_LOGO: Record<string, string> = {
+  'ปตท.': '/logos/ptt.png',
+  'พีที': '/logos/pt.png',
+  'บางจาก': '/logos/bangchak.png',
+  'คาลเท็กซ์': '/logos/caltex.png',
+  'เชลล์': '/logos/shell.png',
+}
+
 const FUEL_LABELS: Record<string, string> = {
   gsh95: '95',
   gsh91: '91',
@@ -142,9 +150,14 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
             <div className="w-8 h-1 bg-gray-300 rounded-full" />
           </div>
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-gray-800">รายงานสถานะน้ำมัน</h3>
-              <p className="text-xs text-gray-400 mt-0.5">{stationName}</p>
+            <div className="flex items-center gap-2.5">
+              {BRAND_LOGO[stationBrand] && (
+                <img src={BRAND_LOGO[stationBrand]} alt={stationBrand} className="w-8 h-8 object-contain rounded-lg" />
+              )}
+              <div>
+                <h3 className="text-base font-bold text-gray-800">รายงานสถานะน้ำมัน</h3>
+                <p className="text-xs text-gray-400 mt-0.5">{stationName}</p>
+              </div>
             </div>
             <button
               onClick={onClose}
@@ -155,7 +168,6 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
               </svg>
             </button>
           </div>
-          <p className="text-[11px] text-gray-400 mt-1">กดเปลี่ยนสถานะที่ต้องการแก้ไข</p>
         </div>
 
         {/* Scrollable content */}
