@@ -181,25 +181,12 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
           </div>
         </div>
 
-        {/* Reporter identity */}
-        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+        {/* Reporter badge */}
+        <div className="px-4 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5">
+          <span className="text-xs">{profile?.level.icon || '🔰'}</span>
+          <span className="text-xs text-gray-500 font-medium">{nickname || 'ผู้ใช้งาน'}</span>
           {profile && (
-            <span className="text-sm flex-shrink-0">
-              {profile.level.icon}
-            </span>
-          )}
-          <input
-            type="text"
-            value={nickname}
-            onChange={e => setNickname(e.target.value)}
-            placeholder="ชื่อเล่น (ไม่บังคับ)"
-            maxLength={20}
-            className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-          />
-          {profile && (
-            <span className="text-[11px] text-gray-400 flex-shrink-0">
-              {profile.totalPoints} แต้ม
-            </span>
+            <span className="text-[10px] text-gray-300 ml-auto">{profile.totalPoints} แต้ม</span>
           )}
         </div>
 

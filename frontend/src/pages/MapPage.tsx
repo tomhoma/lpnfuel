@@ -137,7 +137,6 @@ export default function MapPage() {
       <FilterBar
         selectedFuel={fuelFilter}
         onFuelSelect={setFuelFilter}
-        stationCount={filteredStations.length}
       />
 
       {/* District filter badge */}
