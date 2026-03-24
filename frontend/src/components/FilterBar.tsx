@@ -67,65 +67,69 @@ export default function FilterBar({ selectedFuel, onFuelSelect }: FilterBarProps
       </div>
 
       {/* Profile modal */}
-      {showProfile && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 animate-fadeIn" onClick={() => setShowProfile(false)}>
-          <div className="bg-white rounded-2xl w-[300px] shadow-2xl p-5 space-y-4 animate-slideUp" onClick={e => e.stopPropagation()}>
-            {/* Level + points */}
-            <div className="text-center">
-              <div className="text-4xl mb-1">{levelIcon}</div>
-              <div className="text-sm font-bold text-gray-800">{profile?.level.title || 'ละอ่อนลำไย'}</div>
-              <div className="text-xs text-gray-400 mt-1">
-                {profile?.totalPoints ?? 0} แต้ม
-                {profile?.nextLevel && profile.pointsToNext != null && (
-                  <span> · อีก {profile.pointsToNext} แต้มถึง {profile.nextLevel.icon} {profile.nextLevel.title}</span>
-                )}
-              </div>
-              {/* Progress bar */}
-              {profile?.nextLevel && profile.pointsToNext != null && (
-                <div className="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-400 rounded-full transition-all"
-                    style={{
-                      width: `${Math.min(100, ((profile.totalPoints - (profile.level.min_points)) / (profile.nextLevel.min_points - profile.level.min_points)) * 100)}%`,
-                    }}
-                  />
+      {showProfile && (() => {
+        const points = profile?.totalPoints ?? 0
+        const progress = profile?.nextLevel && profile.pointsToNext != null
+          ? Math.min(100, ((points - profile.level.min_points) / (profile.nextLevel.min_points - profile.level.min_points)) * 100)
+          : 100
+        return (
+          <div className="fixed inset-0 z-[1200] flex items-end sm:items-center justify-center bg-black/50 animate-fadeIn" onClick={() => setShowProfile(false)}>
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl w-full sm:w-[340px] shadow-2xl animate-slideUp" onClick={e => e.stopPropagation()}>
+              {/* Header card with gradient */}
+              <div className="relative bg-gradient-to-br from-emerald-400 to-teal-500 rounded-t-3xl sm:rounded-t-2xl px-5 pt-6 pb-4 text-center overflow-hidden">
+                {/* Decorative circles */}
+                <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
+                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-white/10 rounded-full" />
+
+                <div className="relative">
+                  <div className="text-5xl mb-1 drop-shadow-lg">{levelIcon}</div>
+                  <div className="text-white font-bold text-base">{profile?.level.title || 'ละอ่อนลำไย'}</div>
+                  <div className="text-white/80 text-xs mt-0.5">{points} แต้ม</div>
                 </div>
-              )}
-            </div>
 
-            {/* Nickname input */}
-            <div>
-              <label className="text-xs font-semibold text-gray-500 block mb-1">ชื่อเล่น</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={e => setEditName(e.target.value)}
-                placeholder="ตั้งชื่อเล่น"
-                maxLength={20}
-                className="w-full text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-                autoFocus={false}
-              />
-              <p className="text-[10px] text-gray-300 mt-1">สูงสุด 20 ตัวอักษร · แสดงใน ticker ด้านล่าง</p>
-            </div>
+                {/* Progress bar */}
+                <div className="relative mt-3 mx-4">
+                  <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-white rounded-full transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  {profile?.nextLevel && profile.pointsToNext != null && (
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-white/60">{profile.level.icon} {profile.level.min_points}</span>
+                      <span className="text-[10px] text-white/80 font-medium">อีก {profile.pointsToNext} ถึง {profile.nextLevel.icon}</span>
+                      <span className="text-[10px] text-white/60">{profile.nextLevel.icon} {profile.nextLevel.min_points}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
-            {/* Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowProfile(false)}
-                className="flex-1 py-2 text-sm text-gray-500 bg-gray-100 rounded-lg active:scale-95 transition"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={saveName}
-                className="flex-1 py-2 text-sm text-white bg-emerald-500 rounded-lg font-semibold active:scale-95 transition"
-              >
-                บันทึก
-              </button>
+              {/* Nickname section — compact */}
+              <div className="px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    placeholder="ตั้งชื่อเล่น"
+                    maxLength={20}
+                    autoFocus={false}
+                    className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                  />
+                  <button
+                    onClick={saveName}
+                    className="px-4 py-2 text-sm text-white bg-emerald-500 rounded-xl font-semibold active:scale-95 transition hover:bg-emerald-600 shadow-sm"
+                  >
+                    บันทึก
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-300 mt-1.5 text-center">ชื่อจะแสดงใน ticker เมื่อคุณรายงานสถานะน้ำมัน</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </>
   )
 }
