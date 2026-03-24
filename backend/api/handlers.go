@@ -383,6 +383,27 @@ const dailyPointCap = 30
 
 var validStatuses = map[string]bool{"available": true, "empty": true, "unknown": true}
 
+// Basic profanity filter for Thai + English
+var profanityList = []string{
+	// Thai
+	"ควย", "เหี้ย", "สัตว์", "หี", "แม่ง", "เย็ด", "หน้าหี", "ไอ้สัส",
+	"อีดอก", "อีสัส", "กระหรี่", "อีหน้าหี", "สันดาน", "ชาติหมา",
+	"อีควาย", "ไอ้ควาย", "มึง", "กู",
+	// English
+	"fuck", "shit", "bitch", "dick", "pussy", "asshole", "bastard",
+	"nigger", "whore", "slut", "cunt",
+}
+
+func containsProfanity(s string) bool {
+	lower := strings.ToLower(s)
+	for _, word := range profanityList {
+		if strings.Contains(lower, word) {
+			return true
+		}
+	}
+	return false
+}
+
 func computeLevel(totalPoints int) models.ReporterLevel {
 	level := models.ReporterLevels[0]
 	for _, l := range models.ReporterLevels {
@@ -421,10 +442,13 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Sanitize nickname (max 20 chars)
+	// Sanitize nickname (max 20 chars, filter profanity)
 	nickname := strings.TrimSpace(req.Nickname)
 	if len([]rune(nickname)) > 20 {
 		nickname = string([]rune(nickname)[:20])
+	}
+	if containsProfanity(nickname) {
+		nickname = ""
 	}
 	reporterID := strings.TrimSpace(req.ReporterID)
 
