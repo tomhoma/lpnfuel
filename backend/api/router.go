@@ -7,9 +7,11 @@ import (
 )
 
 var ingestAPIKey string
+var geoCSVPath string
 
-func NewRouter(corsOrigins []string, apiKey string) http.Handler {
+func NewRouter(corsOrigins []string, apiKey string, csvPath string) http.Handler {
 	ingestAPIKey = apiKey
+	geoCSVPath = csvPath
 
 	mux := http.NewServeMux()
 

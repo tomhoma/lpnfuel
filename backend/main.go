@@ -29,15 +29,20 @@ func main() {
 	}
 
 	// Import geocoordinates from CSV on startup
-	if err := importGeoCSV(context.Background(), "../data/stations_geo.csv"); err != nil {
-		log.Printf("Geo import (non-fatal): %v", err)
-		_ = importGeoCSV(context.Background(), "data/stations_geo.csv")
+	geoCSVPath := "../data/stations_geo.csv"
+	if err := importGeoCSV(context.Background(), geoCSVPath); err != nil {
+		log.Printf("Geo import from %s failed: %v", geoCSVPath, err)
+		geoCSVPath = "data/stations_geo.csv"
+		if err := importGeoCSV(context.Background(), geoCSVPath); err != nil {
+			log.Printf("Geo import from %s also failed: %v", geoCSVPath, err)
+			geoCSVPath = "" // no CSV available
+		}
 	}
 
 	// Start price scheduler (fetches PTT + Bangchak daily at 05:15 & 19:30)
 	scheduler.StartPriceScheduler(context.Background())
 
-	router := api.NewRouter(cfg.CORSOrigins, cfg.IngestAPIKey)
+	router := api.NewRouter(cfg.CORSOrigins, cfg.IngestAPIKey, geoCSVPath)
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("Server listening on %s", addr)
 	if err := http.ListenAndServe(addr, router); err != nil {

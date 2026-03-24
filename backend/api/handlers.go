@@ -1,14 +1,17 @@
 package api
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"lpnfuel/db"
@@ -16,6 +19,8 @@ import (
 	"lpnfuel/geo"
 	"lpnfuel/models"
 )
+
+var csvMu sync.Mutex
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
@@ -214,6 +219,14 @@ func handleIngest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		updated++
+	}
+
+	// Append new station IDs to geo CSV
+	if geoCSVPath != "" {
+		newCount := appendNewStationsToGeoCSV(geoCSVPath, records)
+		if newCount > 0 {
+			log.Printf("Ingest: appended %d new stations to %s", newCount, geoCSVPath)
+		}
 	}
 
 	log.Printf("Ingest: %d stations updated", updated)
@@ -437,6 +450,104 @@ func handleGetReports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"reports": reports})
+}
+
+// appendNewStationsToGeoCSV reads the existing CSV, finds station IDs from GAS
+// that are not yet in the file, and appends them with lat=0, lng=0.
+func appendNewStationsToGeoCSV(path string, records []models.GASRecord) int {
+	csvMu.Lock()
+	defer csvMu.Unlock()
+
+	// Read existing IDs from CSV
+	existingIDs := make(map[string]bool)
+	f, err := os.Open(path)
+	if err != nil {
+		log.Printf("geo csv open: %v", err)
+		return 0
+	}
+	rows, err := csv.NewReader(f).ReadAll()
+	f.Close()
+	if err != nil {
+		log.Printf("geo csv read: %v", err)
+		return 0
+	}
+
+	// Find id column index
+	idIdx := -1
+	if len(rows) > 0 {
+		for i, col := range rows[0] {
+			if col == "id" {
+				idIdx = i
+				break
+			}
+		}
+	}
+	if idIdx < 0 {
+		log.Printf("geo csv: id column not found")
+		return 0
+	}
+
+	for _, row := range rows[1:] {
+		if len(row) > idIdx {
+			existingIDs[row[idIdx]] = true
+		}
+	}
+
+	// Collect new stations
+	var newRows [][]string
+	seen := make(map[string]bool)
+	for _, rec := range records {
+		id := strings.TrimSpace(rec.ID)
+		if id == "" || existingIDs[id] || seen[id] {
+			continue
+		}
+		seen[id] = true
+
+		brand := normalizeBrand(strings.TrimSpace(rec.Brand))
+		name := strings.ReplaceAll(strings.TrimSpace(rec.StationName), "_", " ")
+		district := strings.TrimSpace(rec.District)
+		searchName := buildSearchName(brand, name, district)
+
+		newRows = append(newRows, []string{id, brand, name, district, searchName, "0", "0"})
+	}
+
+	if len(newRows) == 0 {
+		return 0
+	}
+
+	// Append to CSV
+	af, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("geo csv append open: %v", err)
+		return 0
+	}
+	defer af.Close()
+
+	w := csv.NewWriter(af)
+	for _, row := range newRows {
+		if err := w.Write(row); err != nil {
+			log.Printf("geo csv write: %v", err)
+		}
+	}
+	w.Flush()
+
+	return len(newRows)
+}
+
+// buildSearchName generates the search_google_maps field for a new station.
+func buildSearchName(brand, name, district string) string {
+	brandSearch := map[string]string{
+		"ปตท.":      "ปตท",
+		"พีที":      "PT",
+		"บางจาก":    "บางจาก",
+		"คาลเท็กซ์": "คาลเท็กซ์",
+		"เชลล์":     "Shell",
+	}
+	prefix := brand
+	if s, ok := brandSearch[brand]; ok {
+		prefix = s
+	}
+	return fmt.Sprintf("ปั๊ม %s %s %s ลำพูน", prefix, name, district)
 }
 
 func handleFuelTypes(w http.ResponseWriter, r *http.Request) {
