@@ -119,7 +119,11 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
         setResult({ ok: false, message: `📍 คุณอยู่ห่างจากปั๊มเกิน ${data.max_km} กม. (${data.distance_km?.toFixed(1)} กม.)` })
       } else if (resp.status === 429) {
         const secs = data.retry_after_seconds || 180
-        setResult({ ok: false, message: `⏳ พึ่งอัพเดทไป รออีก ${secs} วินาที` })
+        const mins = Math.ceil(secs / 60)
+        const msg = data.daily_cap
+          ? data.error
+          : `⏳ พึ่งอัพเดทไป รออีก ${mins} นาที`
+        setResult({ ok: false, message: msg })
       } else if (data.accepted > 0) {
         let msg = `✅ ส่งสำเร็จ ${data.accepted} รายการ`
         if (data.points_earned) {
