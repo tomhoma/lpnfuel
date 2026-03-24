@@ -378,8 +378,29 @@ func computeSummary(stations []models.StationWithStatus) models.OverallSummary {
 
 const maxReportDistanceKm = 3.0
 const reportRateLimitWindow = 3 * time.Minute
+const reporterGlobalCooldown = 10 * time.Minute
+const dailyPointCap = 30
 
 var validStatuses = map[string]bool{"available": true, "empty": true, "unknown": true}
+
+func computeLevel(totalPoints int) models.ReporterLevel {
+	level := models.ReporterLevels[0]
+	for _, l := range models.ReporterLevels {
+		if totalPoints >= l.MinPoints {
+			level = l
+		}
+	}
+	return level
+}
+
+func nextLevel(totalPoints int) *models.ReporterLevel {
+	for _, l := range models.ReporterLevels {
+		if totalPoints < l.MinPoints {
+			return &l
+		}
+	}
+	return nil
+}
 
 func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -400,6 +421,45 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Sanitize nickname (max 20 chars)
+	nickname := strings.TrimSpace(req.Nickname)
+	if len([]rune(nickname)) > 20 {
+		nickname = string([]rune(nickname)[:20])
+	}
+	reporterID := strings.TrimSpace(req.ReporterID)
+
+	// Per-reporter global cooldown (10 min between reports)
+	if reporterID != "" {
+		lastGlobal, err := db.CheckReporterGlobalCooldown(ctx, reporterID)
+		if err == nil && lastGlobal != nil {
+			elapsed := time.Since(*lastGlobal)
+			remaining := reporterGlobalCooldown - elapsed
+			if remaining > 0 {
+				writeJSON(w, http.StatusTooManyRequests, map[string]any{
+					"error":               "กรุณารอ 10 นาทีระหว่างการรายงาน",
+					"retry_after_seconds": int(remaining.Seconds()) + 1,
+				})
+				return
+			}
+		}
+	}
+
+	// Daily point cap check
+	var remainingCap int
+	if reporterID != "" {
+		dailyPoints, _ := db.GetReporterDailyPoints(ctx, reporterID)
+		remainingCap = dailyPointCap - dailyPoints
+		if remainingCap <= 0 {
+			writeJSON(w, http.StatusTooManyRequests, map[string]any{
+				"error":     "ถึงจำกัดรายงานวันนี้แล้ว (30 แต้ม/วัน) พรุ่งนี้มาใหม่นะ!",
+				"daily_cap": dailyPointCap,
+			})
+			return
+		}
+	} else {
+		remainingCap = len(req.Reports) // no cap for anonymous
+	}
+
 	// Get station to check distance
 	station, _, err := db.GetStationWithHistory(ctx, stationID)
 	if err != nil || station == nil {
@@ -411,14 +471,6 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	var distKm float64
 	if station.Lat != nil && station.Lng != nil {
 		distKm = geo.Haversine(req.Lat, req.Lng, *station.Lat, *station.Lng)
-		// if distKm > maxReportDistanceKm {
-		// 	writeJSON(w, http.StatusForbidden, map[string]any{
-		// 		"error":       "too far from station",
-		// 		"distance_km": distKm,
-		// 		"max_km":      maxReportDistanceKm,
-		// 	})
-		// 	return
-		// }
 	}
 
 	// Generate batch ID and extract debug info
@@ -435,6 +487,12 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	var acceptedFuels []string
 	for _, rpt := range req.Reports {
 		if !validStatuses[rpt.Status] {
+			continue
+		}
+
+		// Stop if daily cap reached
+		if accepted >= remainingCap {
+			rateLimited++
 			continue
 		}
 
@@ -466,6 +524,8 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 			UserAgent:   userAgent,
 			IPAddress:   ipAddress,
 			BatchID:     batchID,
+			ReporterID:  reporterID,
+			Nickname:    nickname,
 		}
 
 		if _, err := db.InsertFuelReport(ctx, report); err != nil {
@@ -477,8 +537,8 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if accepted > 0 {
-		log.Printf("Report: station=%s batch=%s accepted=%d dist=%.1fkm ip=%s fuels=[%s]",
-			stationID, batchID, accepted, distKm, ipAddress, strings.Join(acceptedFuels, ", "))
+		log.Printf("Report: station=%s batch=%s reporter=%s nick=%s accepted=%d dist=%.1fkm ip=%s fuels=[%s]",
+			stationID, batchID, reporterID, nickname, accepted, distKm, ipAddress, strings.Join(acceptedFuels, ", "))
 	}
 
 	status := http.StatusOK
@@ -487,6 +547,27 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 		"accepted":     accepted,
 		"rate_limited": rateLimited,
 	}
+
+	// Update reporter points
+	if reporterID != "" && accepted > 0 {
+		if err := db.UpsertReporter(ctx, reporterID, nickname); err != nil {
+			log.Printf("upsert reporter error: %v", err)
+		}
+		newTotal, err := db.IncrementReporterPoints(ctx, reporterID, accepted)
+		if err != nil {
+			log.Printf("increment points error: %v", err)
+		} else {
+			level := computeLevel(newTotal)
+			resp["points_earned"] = accepted
+			resp["total_points"] = newTotal
+			resp["level"] = level
+			if nl := nextLevel(newTotal); nl != nil {
+				resp["next_level"] = nl
+				resp["points_to_next"] = nl.MinPoints - newTotal
+			}
+		}
+	}
+
 	if accepted == 0 && rateLimited > 0 {
 		status = http.StatusTooManyRequests
 		resp["error"] = "พึ่งอัพเดทไปเมื่อสักครู่ กรุณารออีกสักครู่"
@@ -494,6 +575,27 @@ func handleSubmitReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, status, resp)
+}
+
+func handleGetReporter(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	reporter, err := db.GetReporter(r.Context(), id)
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "reporter not found"})
+		return
+	}
+	level := computeLevel(reporter.TotalPoints)
+	nl := nextLevel(reporter.TotalPoints)
+
+	resp := map[string]any{
+		"reporter": reporter,
+		"level":    level,
+	}
+	if nl != nil {
+		resp["next_level"] = nl
+		resp["points_to_next"] = nl.MinPoints - reporter.TotalPoints
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 func handleGetReports(w http.ResponseWriter, r *http.Request) {

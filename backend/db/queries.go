@@ -206,10 +206,10 @@ func UpdateStationGeo(ctx context.Context, id string, lat, lng float64) error {
 func InsertFuelReport(ctx context.Context, r models.FuelReport) (int64, error) {
 	var id int64
 	err := Pool.QueryRow(ctx, `
-		INSERT INTO fuel_reports (station_id, fuel_type, status, reporter_lat, reporter_lng, distance_km, note, user_agent, ip_address, batch_id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO fuel_reports (station_id, fuel_type, status, reporter_lat, reporter_lng, distance_km, note, user_agent, ip_address, batch_id, reporter_id, nickname)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 		RETURNING id
-	`, r.StationID, r.FuelType, r.Status, r.ReporterLat, r.ReporterLng, r.DistanceKm, r.Note, r.UserAgent, r.IPAddress, r.BatchID).Scan(&id)
+	`, r.StationID, r.FuelType, r.Status, r.ReporterLat, r.ReporterLng, r.DistanceKm, r.Note, r.UserAgent, r.IPAddress, r.BatchID, r.ReporterID, r.Nickname).Scan(&id)
 	return id, err
 }
 
@@ -247,7 +247,7 @@ func GetRecentReports(ctx context.Context, stationID string, limit int) ([]model
 // ReportWithStation is a FuelReport with station name and brand for the global feed
 type ReportWithStation struct {
 	models.FuelReport
-	StationName string `json:"station_name"`
+	StationName  string `json:"station_name"`
 	StationBrand string `json:"station_brand"`
 }
 
@@ -257,6 +257,7 @@ func GetGlobalRecentReports(ctx context.Context, limit int) ([]ReportWithStation
 		SELECT fr.id, fr.station_id, fr.fuel_type, fr.status,
 		       fr.reporter_lat, fr.reporter_lng, fr.distance_km, fr.note,
 		       COALESCE(fr.user_agent, ''), COALESCE(fr.ip_address, ''), COALESCE(fr.batch_id, ''),
+		       COALESCE(fr.reporter_id, ''), COALESCE(fr.nickname, ''),
 		       fr.created_at,
 		       COALESCE(s.name, ''), COALESCE(s.brand, '')
 		FROM fuel_reports fr
@@ -275,6 +276,7 @@ func GetGlobalRecentReports(ctx context.Context, limit int) ([]ReportWithStation
 		if err := rows.Scan(&rws.ID, &rws.StationID, &rws.FuelType, &rws.Status,
 			&rws.ReporterLat, &rws.ReporterLng, &rws.DistanceKm, &rws.Note,
 			&rws.UserAgent, &rws.IPAddress, &rws.BatchID,
+			&rws.ReporterID, &rws.Nickname,
 			&rws.CreatedAt,
 			&rws.StationName, &rws.StationBrand); err != nil {
 			continue
@@ -383,6 +385,69 @@ func GetTodayReportOverrides(ctx context.Context) (map[string]map[string]string,
 		result[stationID][gasCategory] = thaiStatus
 	}
 	return result, nil
+}
+
+// UpsertReporter creates or updates a reporter record
+func UpsertReporter(ctx context.Context, id, nickname string) error {
+	_, err := Pool.Exec(ctx, `
+		INSERT INTO reporters (id, nickname, updated_at)
+		VALUES ($1, $2, now())
+		ON CONFLICT (id) DO UPDATE SET
+			nickname = CASE WHEN $2 = '' THEN reporters.nickname ELSE $2 END,
+			updated_at = now()
+	`, id, nickname)
+	return err
+}
+
+// IncrementReporterPoints atomically adds points and returns new total
+func IncrementReporterPoints(ctx context.Context, reporterID string, points int) (int, error) {
+	var total int
+	err := Pool.QueryRow(ctx, `
+		UPDATE reporters SET total_points = total_points + $2, updated_at = now()
+		WHERE id = $1
+		RETURNING total_points
+	`, reporterID, points).Scan(&total)
+	return total, err
+}
+
+// GetReporterDailyPoints counts how many report rows this reporter has today (1AM ICT reset)
+func GetReporterDailyPoints(ctx context.Context, reporterID string) (int, error) {
+	ict, _ := time.LoadLocation("Asia/Bangkok")
+	now := time.Now().In(ict)
+	resetTime := time.Date(now.Year(), now.Month(), now.Day(), 1, 0, 0, 0, ict)
+	if now.Before(resetTime) {
+		resetTime = resetTime.AddDate(0, 0, -1)
+	}
+
+	var count int
+	err := Pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM fuel_reports
+		WHERE reporter_id = $1 AND created_at >= $2
+	`, reporterID, resetTime.UTC()).Scan(&count)
+	return count, err
+}
+
+// CheckReporterGlobalCooldown returns the last report time for this reporter within 10 minutes
+func CheckReporterGlobalCooldown(ctx context.Context, reporterID string) (*time.Time, error) {
+	var lastReport *time.Time
+	err := Pool.QueryRow(ctx, `
+		SELECT MAX(created_at) FROM fuel_reports
+		WHERE reporter_id = $1
+		  AND created_at > now() - interval '10 minutes'
+	`, reporterID).Scan(&lastReport)
+	return lastReport, err
+}
+
+// GetReporter returns a reporter by ID
+func GetReporter(ctx context.Context, id string) (*models.Reporter, error) {
+	var r models.Reporter
+	err := Pool.QueryRow(ctx, `
+		SELECT id, nickname, total_points, created_at FROM reporters WHERE id = $1
+	`, id).Scan(&r.ID, &r.Nickname, &r.TotalPoints, &r.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
 }
 
 // GetLatestReportTime returns the most recent fuel report time globally

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useReporter } from '../hooks/useReporter'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
@@ -51,6 +52,8 @@ const STATUS_CONFIG = [
 ]
 
 export default function FuelReportForm({ stationId, stationName, stationBrand, currentStatuses, onClose }: Props) {
+  const { reporterId, nickname, setNickname, profile, refreshProfile } = useReporter()
+
   // Pre-fill with current statuses
   const [reports, setReports] = useState<Record<string, ReportEntry['status'] | null>>(() => {
     const init: Record<string, ReportEntry['status'] | null> = {}
@@ -105,6 +108,8 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
           reports: entries,
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
+          reporter_id: reporterId,
+          nickname: nickname,
         }),
       })
 
@@ -116,8 +121,14 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
         const secs = data.retry_after_seconds || 180
         setResult({ ok: false, message: `⏳ พึ่งอัพเดทไป รออีก ${secs} วินาที` })
       } else if (data.accepted > 0) {
-        setResult({ ok: true, message: `✅ ส่งสำเร็จ ${data.accepted} รายการ` })
-        setTimeout(() => onClose(), 1200)
+        let msg = `✅ ส่งสำเร็จ ${data.accepted} รายการ`
+        if (data.points_earned) {
+          msg += ` (+${data.points_earned} แต้ม)`
+          if (data.level) msg += ` ${data.level.icon} ${data.level.title}`
+        }
+        setResult({ ok: true, message: msg })
+        refreshProfile()
+        setTimeout(() => onClose(), 2000)
       } else {
         setResult({ ok: false, message: 'ไม่สามารถส่งได้ กรุณาลองใหม่' })
       }
@@ -168,6 +179,28 @@ export default function FuelReportForm({ stationId, stationName, stationBrand, c
               </svg>
             </button>
           </div>
+        </div>
+
+        {/* Reporter identity */}
+        <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+          {profile && (
+            <span className="text-sm flex-shrink-0">
+              {profile.level.icon}
+            </span>
+          )}
+          <input
+            type="text"
+            value={nickname}
+            onChange={e => setNickname(e.target.value)}
+            placeholder="ชื่อเล่น (ไม่บังคับ)"
+            maxLength={20}
+            className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 text-gray-700 placeholder-gray-300 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+          />
+          {profile && (
+            <span className="text-[11px] text-gray-400 flex-shrink-0">
+              {profile.totalPoints} แต้ม
+            </span>
+          )}
         </div>
 
         {/* Scrollable content */}

@@ -140,6 +140,8 @@ type FuelReport struct {
 	UserAgent   string     `json:"user_agent,omitempty"`
 	IPAddress   string     `json:"ip_address,omitempty"`
 	BatchID     string     `json:"batch_id,omitempty"`
+	ReporterID  string     `json:"reporter_id,omitempty"`
+	Nickname    string     `json:"nickname,omitempty"`
 	CreatedAt   time.Time  `json:"created_at"`
 }
 
@@ -149,7 +151,31 @@ type FuelReportInput struct {
 }
 
 type SubmitReportRequest struct {
-	Reports []FuelReportInput `json:"reports"`
-	Lat     float64           `json:"lat"`
-	Lng     float64           `json:"lng"`
+	Reports    []FuelReportInput `json:"reports"`
+	Lat        float64           `json:"lat"`
+	Lng        float64           `json:"lng"`
+	ReporterID string            `json:"reporter_id"`
+	Nickname   string            `json:"nickname"`
+}
+
+type Reporter struct {
+	ID          string    `json:"id"`
+	Nickname    string    `json:"nickname"`
+	TotalPoints int       `json:"total_points"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type ReporterLevel struct {
+	MinPoints int    `json:"min_points"`
+	Title     string `json:"title"`
+	Icon      string `json:"icon"`
+}
+
+var ReporterLevels = []ReporterLevel{
+	{0, "มือใหม่หัดเติม", "🔰"},
+	{5, "ชาวปั๊มลำพูน", "⛽"},
+	{15, "นักสำรวจน้ำมัน", "🛢️"},
+	{30, "ฮีโร่ลำพูน", "🦸"},
+	{50, "ตำนานน้ำมัน", "⭐"},
+	{100, "เทพลำพูน", "👑"},
 }

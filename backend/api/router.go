@@ -27,6 +27,7 @@ func NewRouter(corsOrigins []string, apiKey string, csvPath string) http.Handler
 	mux.HandleFunc("GET /api/v1/fuel-types", handleFuelTypes)
 	mux.HandleFunc("GET /api/v1/reports/latest", handleLatestReport)
 	mux.HandleFunc("GET /api/v1/reports", handleGlobalReports)
+	mux.HandleFunc("GET /api/v1/reporters/{id}", handleGetReporter)
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: corsOrigins,
