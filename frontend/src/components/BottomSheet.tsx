@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { StationWithStatus } from '../types'
 import TransportBadge from './TransportBadge'
+import FuelReportForm from './FuelReportForm'
 import { formatDistance } from '../hooks/useDistance'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
@@ -129,6 +130,9 @@ export default function BottomSheet({ station, onClose }: BottomSheetProps) {
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
+
+          {/* Fuel status report */}
+          <FuelReportForm stationId={station.id} stationBrand={station.brand} />
 
           {/* Row: updated + navigate button */}
           <div className="flex items-center gap-2">
