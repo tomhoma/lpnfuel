@@ -57,10 +57,11 @@ export default function FilterBar({ selectedFuel, onFuelSelect }: FilterBarProps
           {/* Reporter badge */}
           <button
             onClick={openProfile}
-            className="ml-auto flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-gray-50 border border-gray-200 active:scale-95 transition"
+            className="ml-auto flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 active:scale-95 transition shadow-sm hover:bg-emerald-100"
           >
             <span className="text-xs">{levelIcon}</span>
-            <span className="text-xs text-gray-600 font-medium max-w-[80px] truncate">{displayName}</span>
+            <span className="text-xs text-emerald-700 font-semibold max-w-[80px] truncate">{displayName}</span>
+            <svg className="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
