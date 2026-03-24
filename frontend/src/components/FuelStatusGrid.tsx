@@ -150,6 +150,17 @@ export default function FuelStatusGrid({ station, prices, onReport }: Props) {
   const hasUserReports = todayReports.length > 0
   const mostRecentReport = todayReports[0]
 
+  // Get fuel types from the latest submission batch (within 10 seconds)
+  const latestBatchFuels: string[] = []
+  if (mostRecentReport) {
+    const batchTime = new Date(mostRecentReport.created_at).getTime()
+    for (const r of todayReports) {
+      if (Math.abs(new Date(r.created_at).getTime() - batchTime) <= 10_000) {
+        latestBatchFuels.push(r.fuel_type)
+      }
+    }
+  }
+
   // Build current statuses map for report form pre-fill
   const currentStatuses: Record<string, string | null> = {}
   for (const fuelId of availableFuels) {
@@ -178,7 +189,7 @@ export default function FuelStatusGrid({ station, prices, onReport }: Props) {
             ? <>
                 👤 {timeAgo(mostRecentReport.created_at)}
                 <span className="text-gray-300 ml-1">
-                  ({[...latestUserReport.keys()].map(k => FUEL_SHORT[k] || k).join(', ')})
+                  ({latestBatchFuels.map(k => FUEL_SHORT[k] || k).join(', ')})
                 </span>
               </>
             : 'ข้อมูลจากระบบ'}
