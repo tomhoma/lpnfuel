@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { StationWithStatus, PricesResponse } from '../types'
 import TransportBadge from './TransportBadge'
 import FuelReportForm from './FuelReportForm'
-import FuelPriceGrid from './FuelPriceGrid'
-import RecentReports from './RecentReports'
+import FuelStatusGrid from './FuelStatusGrid'
 import { formatDistance } from '../hooks/useDistance'
 
 const FEEDBACK_URL = 'https://script.google.com/macros/s/AKfycbzHG04vwNASOVIZjkKiwo6OU8gkUQOKg5lF8X86kENf3jc47D5eWPANGqjj6kOvo4ZB/exec'
@@ -130,18 +129,16 @@ export default function BottomSheet({ station, onClose, prices }: BottomSheetPro
             <span className="text-sm text-gray-400 ml-2">{station.district}</span>
           </div>
 
-          {/* Fuel prices */}
-          <FuelPriceGrid prices={prices} brand={station.brand} district={station.district} />
-
-          {/* Recent user reports */}
-          <RecentReports stationId={station.id} />
+          {/* Fuel status + prices */}
+          <FuelStatusGrid station={station} prices={prices} />
 
           {station.transport_status && (
             <TransportBadge status={station.transport_status} eta={station.transport_eta} />
           )}
+
+          {/* Report fuel status */}
           <FuelReportForm stationId={station.id} stationBrand={station.brand} />
 
-          {/* Row: updated + navigate button */}
           <div className="flex items-center gap-2">
             {updatedText && (
               <span className="text-xs text-gray-400 flex-shrink-0">
