@@ -15,6 +15,7 @@ interface ReportItem {
   status: string
   created_at: string
   nickname?: string
+  reporter_icon?: string
 }
 
 interface TickerEntry {
@@ -84,17 +85,18 @@ export default function StatsBar({ refreshTrigger }: StatsBarProps) {
 
       const name = r.station_name || `${r.station_brand} #${(r as any).station_id}`
       const reporter = r.nickname || 'ผู้ใช้'
+      const reporterIcon = r.reporter_icon || '👤'
       const ago = timeAgo(r.created_at)
 
       if (availableFuels.length > 0) {
         entries.push({
-          icon: '👤',
+          icon: reporterIcon,
           text: `${reporter} รายงาน ${name} — ${availableFuels.join(', ')} มี · ${ago}`,
           highlight: true,
         })
       } else if (emptyFuels.length > 0) {
         entries.push({
-          icon: '👤',
+          icon: reporterIcon,
           text: `${reporter} รายงาน ${name} — ${emptyFuels.join(', ')} หมด · ${ago}`,
           highlight: false,
         })

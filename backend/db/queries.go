@@ -247,8 +247,9 @@ func GetRecentReports(ctx context.Context, stationID string, limit int) ([]model
 // ReportWithStation is a FuelReport with station name and brand for the global feed
 type ReportWithStation struct {
 	models.FuelReport
-	StationName  string `json:"station_name"`
-	StationBrand string `json:"station_brand"`
+	StationName   string `json:"station_name"`
+	StationBrand  string `json:"station_brand"`
+	ReporterIcon  string `json:"reporter_icon,omitempty"`
 }
 
 // GetGlobalRecentReports returns latest reports across all stations with station info
@@ -259,9 +260,11 @@ func GetGlobalRecentReports(ctx context.Context, limit int) ([]ReportWithStation
 		       COALESCE(fr.user_agent, ''), COALESCE(fr.ip_address, ''), COALESCE(fr.batch_id, ''),
 		       COALESCE(fr.reporter_id, ''), COALESCE(fr.nickname, ''),
 		       fr.created_at,
-		       COALESCE(s.name, ''), COALESCE(s.brand, '')
+		       COALESCE(s.name, ''), COALESCE(s.brand, ''),
+		       COALESCE(r.total_points, 0)
 		FROM fuel_reports fr
 		LEFT JOIN stations s ON fr.station_id = s.id
+		LEFT JOIN reporters r ON fr.reporter_id = r.id
 		ORDER BY fr.created_at DESC
 		LIMIT $1
 	`, limit)
@@ -273,17 +276,41 @@ func GetGlobalRecentReports(ctx context.Context, limit int) ([]ReportWithStation
 	var result []ReportWithStation
 	for rows.Next() {
 		var rws ReportWithStation
+		var totalPoints int
 		if err := rows.Scan(&rws.ID, &rws.StationID, &rws.FuelType, &rws.Status,
 			&rws.ReporterLat, &rws.ReporterLng, &rws.DistanceKm, &rws.Note,
 			&rws.UserAgent, &rws.IPAddress, &rws.BatchID,
 			&rws.ReporterID, &rws.Nickname,
 			&rws.CreatedAt,
-			&rws.StationName, &rws.StationBrand); err != nil {
+			&rws.StationName, &rws.StationBrand, &totalPoints); err != nil {
 			continue
 		}
+		// Calculate reporter icon based on total points
+		rws.ReporterIcon = getReporterIcon(totalPoints)
 		result = append(result, rws)
 	}
 	return result, nil
+}
+
+// getReporterIcon returns the icon for a reporter based on their total points
+func getReporterIcon(points int) string {
+	levels := []struct {
+		minPoints int
+		icon      string
+	}{
+		{100, "👑"},
+		{50, "💎"},
+		{30, "🐎"},
+		{15, "🌊"},
+		{5, "🏮"},
+		{0, "🌱"},
+	}
+	for _, l := range levels {
+		if points >= l.minPoints {
+			return l.icon
+		}
+	}
+	return "🌱"
 }
 
 // CheckReportRateLimit returns the last report time for this station+fuel within the window
